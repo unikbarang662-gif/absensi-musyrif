@@ -29,7 +29,6 @@
     .btn-primary { background: var(--primary); color: white; }
     .btn-wa { background: #25D366; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; }
     .btn-pdf { background: #d32f2f; color: white; }
-    .btn-danger { background: var(--danger); color: white; }
     .error-msg { background: #ffebee; color: var(--danger); padding: 8px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 10px; display: none; }
 
     #main-app { display: none; max-width: 1200px; margin: 0 auto; }
@@ -59,6 +58,7 @@
     .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
     .btn-group .btn { flex: 1; min-width: 100px; font-size: 0.9rem; padding: 10px; }
     .btn-secondary { background: var(--text-light); color: white; }
+    .btn-danger { background: var(--danger); color: white; }
     
     .stats-panel { background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 12px; padding: 15px; margin-bottom: 15px; border-left: 5px solid var(--primary); }
     .stats-panel h3 { font-size: 1rem; margin-bottom: 12px; color: var(--primary); }
@@ -159,10 +159,8 @@
         <h2>⚙️ Pengaturan & Aksi</h2>
         <div class="btn-group">
           <button class="btn btn-primary" onclick="loadData()">🔄 Refresh Data</button>
-          <button class="btn btn-secondary" onclick="exportCSV()">📥 Export CSV</button>
           <button class="btn btn-pdf" onclick="generatePDF()">📄 Laporan PDF</button>
           <button class="btn btn-wa" onclick="waReminder()">🔔 Cek & WA</button>
-          <button class="btn btn-danger" onclick="deleteAllData()">🗑️ Hapus SEMUA Data</button>
         </div>
       </div>
 
@@ -572,8 +570,14 @@
       const photo = document.getElementById('photo-in').files[0];
       
       // VALIDASI: Harus pilih kegiatan DAN upload foto
-      if (!act) return alert('⚠️ Pilih kegiatan terlebih dahulu!');
-      if (!photo) return alert('⚠️ Upload foto kegiatan menggunakan kamera!');
+      if (!act) {
+        alert('⚠️ Pilih kegiatan terlebih dahulu!');
+        return;
+      }
+      if (!photo) {
+        alert('⚠️ Upload foto kegiatan menggunakan kamera depan!');
+        return;
+      }
       
       const now=new Date(), nm=now.getHours()*60+now.getMinutes();
       const j = JOBS.find(x=>x.n===act);
@@ -603,53 +607,7 @@
       loadData();
     }
     
-    // === FITUR BARU: HAPUS SEMUA DATA (ADMIN ONLY) ===
-    async function deleteAllData() {
-      if (role !== 'admin') return;
-      if (!confirm('⚠️ PERINGATAN KERAS!\n\nAnda akan menghapus SEMUA data absensi yang tersimpan.\nTindakan ini TIDAK DAPAT diurungkan.\n\nKetik "HAPUS" untuk konfirmasi:')) return;
-      
-      const confirmText = prompt('Ketik "HAPUS" untuk mengonfirmasi penghapusan semua data:');
-      if (confirmText !== 'HAPUS') {
-        alert('❌ Dibatalkan. Data tidak dihapus.');
-        return;
-      }
-      
-      try {
-        const btn = document.querySelector('.btn-danger');
-        const originalText = btn.textContent;
-        btn.disabled = true;
-        btn.textContent = 'Menghapus...';
-        
-        const res = await fetch(GOOGLE_SCRIPT_URL, {
-          method: 'POST', 
-          body: JSON.stringify({ action: 'deleteAll' })
-        });
-        const result = await res.json();
-        
-        if (result.status === 'success') {
-          alert('✅ SEMUA DATA BERHASIL DIHAPUS!');
-          loadData();
-        } else {
-          throw new Error(result.message || 'Gagal menghapus data');
-        }
-      } catch (err) {
-        alert('❌ Gagal menghapus semua data: ' + err.message);
-      } finally {
-        const btn = document.querySelector('.btn-danger');
-        btn.disabled = false;
-        btn.textContent = '🗑️ Hapus SEMUA Data';
-      }
-    }
-    
-    function exportCSV() {
-      if(!data.length) return alert('Data kosong');
-      const h = ['Timestamp','Nama','Kamar','Kegiatan','Catatan'];
-      const r = data.map(d=>[d.Timestamp,d['Nama Musyrif'],d.Kamar,d.Kegiatan,`"${(d.Catatan||'').replace(/"/g,'""')}"`].join(','));
-      const blob = new Blob([h.join(',')+'\n'+r.join('\n')], {type:'text/csv'});
-      const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`absensi_${new Date().toISOString().slice(0,10)}.csv`; a.click();
-    }
-
-    async function generatePDF() {
+    function generatePDF() {
       if(!data.length) return alert('Tidak ada data untuk laporan!');
       
       document.getElementById('report-section').style.display = 'block';
@@ -710,28 +668,27 @@
         options: { responsive: true }
       });
       
-      await new Promise(r => setTimeout(r, 1000));
-      
-      const { jsPDF } = window.jspdf;
-      const element = document.getElementById('report-section');
-      
-      try {
-        const canvas = await html2canvas(element, { scale: 2, useCORS: true });
-        const imgData = canvas.toDataURL('image/png');
+      setTimeout(() => {
+        const { jsPDF } = window.jspdf;
+        const element = document.getElementById('report-section');
         
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-        
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save(`Laporan_Kinerja_Musyrif_${new Date().toISOString().slice(0,10)}.pdf`);
-        
-        document.getElementById('report-section').style.display = 'none';
-        alert('✅ Laporan PDF berhasil diunduh!');
-      } catch(err) {
-        alert('❌ Gagal generate PDF: ' + err.message);
-        document.getElementById('report-section').style.display = 'none';
-      }
+        html2canvas(element, { scale: 2, useCORS: true }).then(canvas => {
+          const imgData = canvas.toDataURL('image/png');
+          
+          const pdf = new jsPDF('p', 'mm', 'a4');
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+          
+          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+          pdf.save(`Laporan_Kinerja_Musyrif_${new Date().toISOString().slice(0,10)}.pdf`);
+          
+          document.getElementById('report-section').style.display = 'none';
+          alert('✅ Laporan PDF berhasil diunduh!');
+        }).catch(err => {
+          alert('❌ Gagal generate PDF: ' + err.message);
+          document.getElementById('report-section').style.display = 'none';
+        });
+      }, 1000);
     }
     
     function waReminder() {
