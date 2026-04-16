@@ -32,6 +32,7 @@
     .btn-wa { background: #25D366; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; }
     .btn-pdf { background: #d32f2f; color: white; }
     .error-msg { background: #ffebee; color: var(--danger); padding: 8px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 10px; display: none; }
+    .success-msg { background: #e8f5e9; color: var(--success); padding: 8px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 10px; display: none; }
 
     #main-app { display: none; max-width: 1200px; margin: 0 auto; }
     header { text-align: center; margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; border-radius: 12px; position: relative; }
@@ -135,6 +136,7 @@
         <button class="tab-btn" onclick="switchTab('admin')">🛡️ Admin</button>
       </div>
       <div id="login-error" class="error-msg"></div>
+      <div id="login-success" class="success-msg"></div>
       
       <form id="musyrif-form">
         <div class="form-group">
@@ -161,7 +163,10 @@
       </form>
       
       <form id="admin-form" style="display:none;">
-        <div class="form-group"><label>PIN Admin</label><input type="password" id="a-pin" required></div>
+        <div class="form-group">
+          <label>PIN Admin</label>
+          <input type="password" id="a-pin" placeholder="Masukkan: 1234" required>
+        </div>
         <button type="submit" class="btn btn-primary">🛡️ Masuk Admin</button>
       </form>
     </div>
@@ -206,7 +211,24 @@
 
       <div class="card">
         <h2>📜 Semua Data Absensi</h2>
-        <div style="overflow-x:auto;"><table class="history-table"><thead><tr><th>Waktu</th><th>Nama</th><th>Asrama</th><th>Kamar</th><th>Kegiatan</th><th>Foto</th><th>Aksi</th></tr></thead><tbody id="admin-tbody"></tbody></table></div>
+        <div style="overflow-x:auto;">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Waktu</th>
+                <th>Nama</th>
+                <th>Asrama</th>
+                <th>Kamar</th>
+                <th>Kegiatan</th>
+                <th>Foto</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="admin-tbody">
+              <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-light);">Klik "Refresh Data" untuk memuat</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div id="report-section" class="report-section">
@@ -385,13 +407,13 @@
 
     // DATA KEGIATAN DENGAN HARI
     const JOBS = [
-      { n: "Membangunkan Santri", t: "03:45", tf: "03:30", e: "04:30", days: [0,1,2,3,4,5,6] },
+      { n: "Membangunkan Santri", t: "03:45", tf: "03:30", e: "04:15", days: [0,1,2,3,4,5,6] },
       { n: "Pengajian Ba'da Subuh", t: "05:00", e: "05:45", days: [0,1,2,3,4,5,6] },
       { n: "Menggobraki Berangkat Sekolah Formal", t: "06:30", e: "07:00", days: [0,1,2,3,4,5,6] },
       { n: "Menggobraki Piket Kamar & Persiapan Maghrib", t: "16:30", e: "17:30", days: [0,1,2,3,4,5,6] },
-      { n: "Mengobraki dan Mendampingi Dalail", t: "18:00", e: "19:30", days: [1] }, // Senin
-      { n: "Mengobraki dan Mendampingi Tawasulan", t: "21:00", e: "23:30", days: [4] }, // Kamis
-      { n: "Pendampingan Jam Muthola'ah", t: "19:30", e: "20:30", days: [0,2,3,6] }, // Selasa, Rabu, Sabtu, Minggu
+      { n: "Mengobraki dan Mendampingi Dalail", t: "18:00", e: "19:30", days: [1] },
+      { n: "Mengobraki dan Mendampingi Tawasulan", t: "21:00", e: "22:30", days: [4] },
+      { n: "Pendampingan Jam Muthola'ah", t: "19:30", e: "20:30", days: [0,2,3,6] },
       { n: "Menertibkan Jam Tidur", t: "21:30", e: "22:00", days: [0,1,2,3,4,5,6] }
     ];
 
@@ -442,12 +464,19 @@
 
     document.getElementById('admin-form').onsubmit = e => {
       e.preventDefault();
-      if(document.getElementById('a-pin').value === ADMIN_PIN) login('Admin', 'Full Access', 'admin', null);
-      else showError('PIN Admin salah!');
+      const pin = document.getElementById('a-pin').value;
+      if(pin === ADMIN_PIN) {
+        login('Admin', 'Full Access', 'admin', null);
+      } else {
+        showError('PIN Admin salah! Gunakan: 1234');
+      }
     };
 
     function login(name, room, r, asrama) {
-      role = r; user = {name, room}; currentAsrama = asrama;
+      role = r; 
+      user = {name, room}; 
+      currentAsrama = asrama;
+      
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('main-app').style.display = 'block';
       document.getElementById('app-title').textContent = r==='admin' ? '🛡️ Dashboard Admin' : '📋 Absensi Musyrif';
@@ -461,9 +490,23 @@
         document.getElementById('musyrif-view').style.display = 'block';
       }
       
-      loadData(); renderSched(); updJobs();
+      loadData(); 
+      renderSched(); 
+      updJobs();
     }
-    function showError(m) { const e=document.getElementById('login-error'); e.textContent=m; e.style.display='block'; setTimeout(()=>e.style.display='none',3000); }
+    
+    function showError(m) { 
+      const e=document.getElementById('login-error'); 
+      e.textContent=m; 
+      e.style.display='block'; 
+      setTimeout(()=>e.style.display='none',3000); 
+    }
+
+    function showAlert(message, type) {
+      const box = document.getElementById('alert-box');
+      box.innerHTML = `<div style="padding:12px;margin-bottom:15px;border-radius:8px;background:${type==='success'?'#e8f5e9':'#ffebee'};color:${type==='success'?'#2e7d32':'#c62828'};font-size:0.9rem;">${message}</div>`;
+      setTimeout(() => box.innerHTML = '', 4000);
+    }
 
     function renderSched() {
       const now = new Date();
@@ -532,7 +575,7 @@
       if(myChart) myChart.destroy();
       myChart = new Chart(ctx, {
         type: 'bar',
-         {
+        data: {
           labels: days,
           datasets: [{
             label: 'Jumlah Absensi',
@@ -571,7 +614,9 @@
       const act = new Set(data.filter(x=>new Date(x.Timestamp)>=wk).map(x=>x['Nama Musyrif']));
       document.getElementById('s-active').textContent = `${act.size}/12`;
       
-      const pc = document.getElementById('perf-container'); pc.innerHTML='';
+      const pc = document.getElementById('perf-container'); 
+      pc.innerHTML='';
+      
       Object.keys(MUSYRIF_BY_ASMARA).forEach(asramaKey => {
         const asrama = MUSYRIF_BY_ASMARA[asramaKey];
         Object.keys(asrama.musyrif).forEach(n => {
@@ -598,7 +643,7 @@
       if(adminChart) adminChart.destroy();
       adminChart = new Chart(ctx2, {
         type: 'bar',
-         {
+        data: {
           labels: names,
           datasets: [{
             label: 'Kehadiran Minggu Ini (%)',
@@ -631,6 +676,7 @@
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         
         data = await res.json();
+        showAlert(`✅ Berhasil memuat ${data.length} data`, 'success');
         
         if (role === 'admin') { 
           updAdminStats(); 
@@ -641,20 +687,32 @@
         }
       } catch (e) {
         console.error('Error:', e);
-        alert('❌ Gagal muat data. Periksa koneksi internet.');
+        showAlert('❌ Gagal muat data. Periksa koneksi internet atau URL Google Script.', 'error');
       }
     }
     
     function renderAdminTable() {
+      if (data.length === 0) {
+        document.getElementById('admin-tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-light);">Belum ada data absensi</td></tr>';
+        return;
+      }
+      
       document.getElementById('admin-tbody').innerHTML = data.slice().reverse().map(d=>`<tr><td>${new Date(d.Timestamp).toLocaleString()}</td><td>${d['Nama Musyrif']}</td><td>${d.Asrma || '-'}</td><td>${d.Kamar}</td><td>${d.Kegiatan}</td><td>${d.Foto?`<img src="${d.Foto}" class="photo-thumb" onclick="viewImg('${d.Foto.replace(/'/g,"\\'")}')"`:'-'}</td><td><button class="btn btn-danger" style="padding:4px 8px;font-size:0.7rem;" onclick="delRow('${d.Timestamp}','${d['Nama Musyrif']}')">Hapus</button></td></tr>`).join('');
     }
     
     function renderMyTable() {
       const my = data.filter(d=>d['Nama Musyrif']===user.name).reverse();
-      document.getElementById('my-tbody').innerHTML = my.length ? my.map(d=>`<tr><td>${new Date(d.Timestamp).toLocaleString()}</td><td>${d.Kegiatan}</td><td>${d.Foto?`<img src="${d.Foto}" class="photo-thumb" onclick="viewImg('${d.Foto.replace(/'/g,"\\'")}')"`:'-'}</td></tr>`).join('') : '<tr><td colspan="3" style="text-align:center;padding:15px;">Belum ada riwayat</td></tr>';
+      if (my.length === 0) {
+        document.getElementById('my-tbody').innerHTML = '<tr><td colspan="3" style="text-align:center;padding:15px;">Belum ada riwayat</td></tr>';
+        return;
+      }
+      document.getElementById('my-tbody').innerHTML = my.map(d=>`<tr><td>${new Date(d.Timestamp).toLocaleString()}</td><td>${d.Kegiatan}</td><td>${d.Foto?`<img src="${d.Foto}" class="photo-thumb" onclick="viewImg('${d.Foto.replace(/'/g,"\\'")}')"`:'-'}</td></tr>`).join('');
     }
     
-    function viewImg(s) { document.getElementById('p-img').src=s; document.getElementById('p-modal').classList.add('active'); }
+    function viewImg(s) { 
+      document.getElementById('p-img').src=s; 
+      document.getElementById('p-modal').classList.add('active'); 
+    }
 
     document.getElementById('absen-form').onsubmit = async e => {
       e.preventDefault();
@@ -663,11 +721,11 @@
       const photo = document.getElementById('photo-in').files[0];
       
       if (!act) {
-        alert('⚠️ Pilih kegiatan terlebih dahulu!');
+        showAlert('⚠️ Pilih kegiatan terlebih dahulu!', 'error');
         return;
       }
       if (!photo) {
-        alert('⚠️ Upload foto kegiatan menggunakan kamera depan!');
+        showAlert('⚠️ Upload foto kegiatan menggunakan kamera depan!', 'error');
         return;
       }
       
@@ -676,32 +734,74 @@
       const j = JOBS.find(x=>x.n===act && x.days.includes(day));
       if(j) {
         const s=j.tf?j.tf:j.t, [sh,sm]=s.split(':').map(Number), [eh,em]=j.e.split(':').map(Number);
-        if(nm<sh*60+sm || nm>eh*60+em) return alert('❌ Absensi hanya bisa dilakukan saat jadwal kegiatan berlangsung!');
+        if(nm<sh*60+sm || nm>eh*60+em) {
+          showAlert('❌ Absensi hanya bisa dilakukan saat jadwal kegiatan berlangsung!', 'error');
+          return;
+        }
       }
       
-      const btn = document.getElementById('sub-btn'); btn.disabled=true; btn.textContent='Mengirim...';
+      const btn = document.getElementById('sub-btn'); 
+      btn.disabled=true; 
+      btn.textContent='Mengirim...';
+      
       try {
-        const b64 = await new Promise((r,j)=>{const rd=new FileReader();rd.onload=()=>r(rd.result);rd.onerror=j;rd.readAsDataURL(photo);});
-        const pay = {musyrif:user.name, kamar:user.room, asrama: currentAsrama ? MUSYRIF_BY_ASMARA[currentAsrama].name : '', kegiatan:act, foto:b64, catatan:document.getElementById('notes').value};
-        const res = await fetch(GOOGLE_SCRIPT_URL, {method:'POST', body:JSON.stringify(pay)});
+        const b64 = await new Promise((r,j)=>{
+          const rd=new FileReader();
+          rd.onload=()=>r(rd.result);
+          rd.onerror=j;
+          rd.readAsDataURL(photo);
+        });
+        
+        const pay = {
+          musyrif:user.name, 
+          kamar:user.room, 
+          asrama: currentAsrama ? MUSYRIF_BY_ASMARA[currentAsrama].name : '', 
+          kegiatan:act, 
+          foto:b64, 
+          catatan:document.getElementById('notes').value
+        };
+        
+        const res = await fetch(GOOGLE_SCRIPT_URL, {
+          method:'POST', 
+          body:JSON.stringify(pay)
+        });
         const out = await res.json();
+        
         if(out.status==='success') {
-          alert('✅ Absensi berhasil dikirim!');
+          showAlert('✅ Absensi berhasil dikirim!', 'success');
           document.getElementById('absen-form').reset();
-          loadData(); showStats();
-        } else throw new Error(out.message);
-      } catch(err) { alert('❌ Gagal: '+err.message); }
-      finally { btn.disabled=false; btn.textContent='✅ Kirim Absensi'; }
+          loadData(); 
+          showStats();
+        } else {
+          throw new Error(out.message);
+        }
+      } catch(err) { 
+        showAlert('❌ Gagal: '+err.message, 'error'); 
+      } finally { 
+        btn.disabled=false; 
+        btn.textContent='✅ Kirim Absensi'; 
+      }
     };
 
     async function delRow(ts, nm) {
       if(!confirm(`Hapus data ${nm}?\n${ts}`)) return;
-      await fetch(GOOGLE_SCRIPT_URL, {method:'POST', body:JSON.stringify({action:'delete', timestamp:ts, musyrif:nm})});
-      loadData();
+      try {
+        await fetch(GOOGLE_SCRIPT_URL, {
+          method:'POST', 
+          body:JSON.stringify({action:'delete', timestamp:ts, musyrif:nm})
+        });
+        showAlert('✅ Data berhasil dihapus', 'success');
+        loadData();
+      } catch(err) {
+        showAlert('❌ Gagal menghapus: '+err.message, 'error');
+      }
     }
     
     function generatePDF() {
-      if(!data.length) return alert('Tidak ada data untuk laporan!');
+      if(!data.length) {
+        showAlert('❌ Tidak ada data untuk laporan!', 'error');
+        return;
+      }
       
       document.getElementById('report-section').style.display = 'block';
       document.getElementById('r-date').textContent = new Date().toLocaleString('id-ID');
@@ -768,28 +868,33 @@
           pdf.save(`Laporan_Kinerja_Per_Asrama_${new Date().toISOString().slice(0,10)}.pdf`);
           
           document.getElementById('report-section').style.display = 'none';
-          alert('✅ Laporan PDF Per Asrama berhasil diunduh!');
+          showAlert('✅ Laporan PDF Per Asrama berhasil diunduh!', 'success');
         }).catch(err => {
-          alert('❌ Gagal generate PDF: ' + err.message);
+          showAlert('❌ Gagal generate PDF: ' + err.message, 'error');
           document.getElementById('report-section').style.display = 'none';
         });
       }, 1000);
     }
     
     function generateIndividualPDF() {
-      if(!data.length) return alert('Tidak ada data untuk laporan!');
+      if(!data.length) {
+        showAlert('❌ Tidak ada data untuk laporan!', 'error');
+        return;
+      }
       
       const musyrifName = prompt('Masukkan nama musyrif yang akan dicetak laporannya:');
       if (!musyrifName) return;
       
       const musyrifData = data.filter(d => d['Nama Musyrif'] === musyrifName);
-      if (!musyrifData.length) return alert('Data absensi untuk musyrif tersebut tidak ditemukan!');
+      if (!musyrifData.length) {
+        showAlert('❌ Data absensi untuk musyrif tersebut tidak ditemukan!', 'error');
+        return;
+      }
       
       document.getElementById('individual-report-section').style.display = 'block';
       document.getElementById('ind-name').textContent = musyrifName;
       document.getElementById('ind-date').textContent = new Date().toLocaleString('id-ID');
       
-      // Find asrama and rooms
       let foundAsrama = '';
       let foundRooms = '';
       Object.keys(MUSYRIF_BY_ASMARA).forEach(key => {
@@ -851,9 +956,9 @@
           pdf.save(`Laporan_Individu_${musyrifName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`);
           
           document.getElementById('individual-report-section').style.display = 'none';
-          alert('✅ Laporan PDF Individu berhasil diunduh!');
+          showAlert('✅ Laporan PDF Individu berhasil diunduh!', 'success');
         }).catch(err => {
-          alert('❌ Gagal generate PDF: ' + err.message);
+          showAlert('❌ Gagal generate PDF: ' + err.message, 'error');
           document.getElementById('individual-report-section').style.display = 'none';
         });
       }, 1000);
@@ -870,11 +975,19 @@
         });
       });
       
-      if(!miss.length) return alert('✅ Semua sudah absen!');
+      if(!miss.length) {
+        showAlert('✅ Semua sudah absen!', 'success');
+        return;
+      }
       window.open(`https://wa.me/?text=${encodeURIComponent(`*REMINDER ABSENSI*\nYth. ${miss.join(', ')},\nAnda belum absen hari ini.`)}`);
     }
 
-    setInterval(()=>{if(role){renderSched();updJobs();}}, 60000);
+    setInterval(()=>{
+      if(role){
+        renderSched();
+        updJobs();
+      }
+    }, 60000);
   </script>
 </body>
 </html>
