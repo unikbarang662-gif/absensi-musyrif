@@ -227,6 +227,7 @@
   <div class="modal" id="p-modal" onclick="this.classList.remove('active')"><img id="p-img"></div>
 
   <script>
+    // ================= KONFIGURASI OTOMATIS =================
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxZf_fvTjMpEIGdBhoNkkL23Af3IU8TcU1w4f7uUfRcf3fCpfNWKt5TTIVz3VkC6w8YPw/exec";
     const ADMIN_PIN = "1234";
     const WA_ADMIN = "6285893588373";
@@ -353,11 +354,11 @@
       if(myChart) myChart.destroy();
       myChart = new Chart(ctx, {
         type: 'bar',
-        data: {
+         {
           labels: days,
           datasets: [{
             label: 'Jumlah Absensi',
-            data: chartData,
+             chartData,
             backgroundColor: ['rgba(46,125,50,0.8)','rgba(76,175,80,0.8)','rgba(139,195,74,0.8)','rgba(205,220,57,0.8)','rgba(255,193,7,0.8)','rgba(255,152,0,0.8)','rgba(244,67,54,0.8)'],
             borderWidth: 2,
             borderRadius: 8
@@ -407,7 +408,7 @@
           labels: names,
           datasets: [{
             label: 'Kehadiran Minggu Ini (%)',
-            data: perfData,
+             perfData,
             backgroundColor: colors,
             borderWidth: 2
           }]
