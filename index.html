@@ -9,7 +9,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
-    body { background: #f5f5f5; padding: 20px; }
+    body { background: #f0f2f5; padding: 20px; }
     .container { max-width: 1200px; margin: 0 auto; }
     
     #loginScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #2e7d32, #66bb6a); display: flex; justify-content: center; align-items: center; z-index: 1000; }
@@ -22,12 +22,11 @@
     .formGroup label { display: block; margin-bottom: 8px; font-weight: 600; color: #424242; }
     .formGroup input, .formGroup select { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; }
     .formGroup input:focus, .formGroup select:focus { outline: none; border-color: #2e7d32; }
-    .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; margin-bottom: 10px; transition: 0.3s; }
+    .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; margin-bottom: 10px; transition: 0.3s; color: white; }
     .btn:hover { opacity: 0.9; transform: translateY(-1px); }
-    .btnPrimary { background: #2e7d32; color: white; }
-    .btnWa { background: #25D366; color: white; }
-    .btnPdf { background: #d32f2f; color: white; }
-    .btnSecondary { background: #757575; color: white; }
+    .btnPrimary { background: #2e7d32; }
+    .btnWa { background: #25D366; }
+    .btnPdf { background: #d32f2f; }
     .error { background: #ffebee; color: #c62828; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: none; text-align: center; }
     
     #mainApp { display: none; }
@@ -52,7 +51,6 @@
     .alert.show { display: block; animation: slideIn 0.3s; }
     .alertError { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
     .alertSuccess { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
-    .alertInfo { background: #e3f2fd; color: #1976d2; border: 1px solid #90caf9; }
     
     @keyframes slideIn {
       from { transform: translateY(-20px); opacity: 0; }
@@ -62,7 +60,6 @@
     table { width: 100%; border-collapse: collapse; }
     th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e0e0e0; }
     th { background: #f5f5f5; font-weight: 600; }
-    .photoThumb { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; cursor: pointer; }
     
     .scheduleGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
     .scheduleItem { padding: 15px; border: 2px solid #e0e0e0; border-radius: 8px; background: #fafafa; }
@@ -79,15 +76,168 @@
     .statBox .bar { height: 8px; background: #e0e0e0; border-radius: 4px; margin-top: 8px; overflow: hidden; }
     .statBox .fill { height: 100%; background: #2e7d32; transition: width 0.5s; }
     
-    .reportSection { display: none; background: white; padding: 40px; margin: 20px 0; }
-    .reportHeader { text-align: center; border-bottom: 3px solid #2e7d32; padding-bottom: 20px; margin-bottom: 30px; }
-    .reportMeta { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 20px 0; background: #f5f5f5; padding: 20px; border-radius: 8px; }
-    .assessmentTable { width: 100%; margin: 20px 0; border-collapse: collapse; }
-    .assessmentTable th, .assessmentTable td { padding: 12px; border: 1px solid #ddd; text-align: left; }
-    .assessmentTable th { background: #2e7d32; color: white; }
+    /* Report Styles */
+    .reportSection { 
+      display: none; 
+      background: white; 
+      padding: 40px; 
+      margin: 20px 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .reportHeader { 
+      text-align: center; 
+      border-bottom: 3px solid #2e7d32; 
+      padding-bottom: 20px; 
+      margin-bottom: 30px; 
+    }
+    .reportHeader h1 { 
+      color: #2e7d32; 
+      font-size: 24px;
+      font-weight: bold;
+      margin: 0;
+    }
+    .reportHeader p {
+      color: #757575;
+      margin: 5px 0 0 0;
+      font-size: 14px;
+    }
+    .reportMeta { 
+      display: grid; 
+      grid-template-columns: repeat(2, 1fr); 
+      gap: 15px; 
+      margin: 20px 0; 
+      background: #f8f9fa; 
+      padding: 20px; 
+      border-radius: 8px; 
+    }
+    .reportMetaItem { 
+      font-size: 14px;
+    }
+    .reportMetaItem strong { 
+      color: #2e7d32;
+      font-weight: 600;
+    }
+    
+    .criteriaSection {
+      margin: 30px 0;
+    }
+    .criteriaSection h3 {
+      color: #2e7d32;
+      margin-bottom: 15px;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .criteriaGrid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .criteriaItem {
+      padding: 15px;
+      border-radius: 6px;
+      text-align: center;
+      font-size: 13px;
+    }
+    .criteriaItem.sangat-aktif { background: #c8e6c9; color: #2e7d32; }
+    .criteriaItem.aktif { background: #fff9c4; color: #f57f17; }
+    .criteriaItem.cukup { background: #ffe0b2; color: #e65100; }
+    .criteriaItem.kurang { background: #ffcdd2; color: #c62828; }
+    .criteriaItem strong {
+      display: block;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+    
+    .assessmentTable { 
+      width: 100%; 
+      margin: 20px 0; 
+      border-collapse: collapse; 
+      font-size: 14px;
+    }
+    .assessmentTable th { 
+      background: #2e7d32; 
+      color: white;
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+    }
+    .assessmentTable td { 
+      padding: 10px 12px;
+      border: 1px solid #e0e0e0;
+    }
+    .assessmentTable tr:nth-child(even) { 
+      background: #f9f9f9; 
+    }
+    .statusBadge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .statusBadge.kurang { background: #ffcdd2; color: #c62828; }
+    .statusBadge.cukup { background: #ffe0b2; color: #e65100; }
+    .statusBadge.aktif { background: #fff9c4; color: #f57f17; }
+    .statusBadge.sangat-aktif { background: #c8e6c9; color: #2e7d32; }
+    
+    .chartsSection {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 30px;
+      margin: 30px 0;
+    }
+    .chartBox {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+    }
+    .chartBox h4 {
+      color: #2e7d32;
+      margin-bottom: 15px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .reportFooter {
+      margin-top: 40px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #757575;
+    }
+    .reportFooter strong {
+      color: #424242;
+    }
+    
+    .signatureSection {
+      margin-top: 50px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 50px;
+      text-align: center;
+    }
+    .signatureBox {
+      margin-bottom: 80px;
+    }
+    .signatureBox strong {
+      display: block;
+      margin-top: 10px;
+    }
+    .signatureLine {
+      border-top: 2px solid #333;
+      padding-top: 5px;
+      display: inline-block;
+      min-width: 200px;
+      margin-top: 60px;
+    }
     
     @media print { .noPrint, header, .btnGroup { display: none !important; } .reportSection { display: block !important; } body { background: white; } }
-    @media (max-width: 768px) { .scheduleGrid { grid-template-columns: 1fr; } .btnGroup { flex-direction: column; } .statsSummary { grid-template-columns: 1fr; } }
+    @media (max-width: 768px) { .scheduleGrid { grid-template-columns: 1fr; } .btnGroup { flex-direction: column; } .statsSummary { grid-template-columns: 1fr; } .criteriaGrid { grid-template-columns: repeat(2, 1fr); } .chartsSection { grid-template-columns: 1fr; } .reportMeta { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -144,18 +294,9 @@
 
     <div id="adminPanel" style="display:none;">
       <div class="card">
-        <h2>⚠️ Konfigurasi Penting</h2>
-        <div class="alert alertInfo show">
-          <strong>📌 Setup Google Apps Script:</strong><br><br>
-          1. Buka <a href="https://script.google.com" target="_blank">script.google.com</a><br>
-          2. Buat project baru dan paste kode backend (lihat instruksi lengkap)<br>
-          3. Deploy sebagai Web App dengan akses "Anyone"<br>
-          4. Copy URL dan ganti di baris 350 file ini<br>
-          5. Klik tombol "🧪 Test Koneksi" untuk memastikan koneksi berhasil
-        </div>
+        <h2>⚙️ Pengaturan & Aksi</h2>
         <div class="btnGroup">
           <button class="btn btnPrimary" onclick="loadData()">🔄 Refresh Data</button>
-          <button class="btn btnSecondary" onclick="testConnection()">🧪 Test Koneksi</button>
           <button class="btn btnPdf" onclick="generatePDF()">📄 Laporan PDF</button>
           <button class="btn btnWa" onclick="waReminder()">🔔 Cek & WA</button>
         </div>
@@ -229,25 +370,78 @@
       </div>
     </div>
 
+    <!-- PDF Report Section -->
     <div id="reportSection" class="reportSection">
       <div class="reportHeader">
-        <h1 style="color:#2e7d32;">📊 LAPORAN KINERJA MUSYRIF</h1>
-        <p style="color:#757575;margin-top:10px;">Pondok Pesantren - Sistem Absensi Digital</p>
+        <h1>📊 LAPORAN KINERJA MUSYRIF</h1>
+        <p>Pondok Pesantren - Sistem Absensi Digital</p>
       </div>
+      
       <div class="reportMeta">
-        <div><strong>Periode:</strong> <span id="rPeriod">Minggu Ini</span></div>
-        <div><strong>Tanggal Cetak:</strong> <span id="rDate"></span></div>
-        <div><strong>Total Musyrif:</strong> <span id="rTotal">4</span> orang</div>
-        <div><strong>Total Absensi:</strong> <span id="rAbsen">0</span> kali</div>
+        <div class="reportMetaItem"><strong>Periode:</strong> <span id="rPeriod">Minggu Ini</span></div>
+        <div class="reportMetaItem"><strong>Tanggal Cetak:</strong> <span id="rDate"></span></div>
+        <div class="reportMetaItem"><strong>Total Musyrif:</strong> <span id="rTotal">4</span> orang</div>
+        <div class="reportMetaItem"><strong>Total Absensi:</strong> <span id="rAbsen">0</span> kali</div>
       </div>
-      <div id="asramaReports"></div>
-      <div style="margin-top:50px;text-align:center;">Mengetahui, Pengasuh Pondok (_________________)</div>
+
+      <div class="criteriaSection">
+        <h3>📋 Kriteria Penilaian</h3>
+        <div class="criteriaGrid">
+          <div class="criteriaItem sangat-aktif"><strong>Sangat Aktif</strong>≥70% kehadiran</div>
+          <div class="criteriaItem aktif"><strong>Aktif</strong>50-69% kehadiran</div>
+          <div class="criteriaItem cukup"><strong>Cukup</strong>30-49% kehadiran</div>
+          <div class="criteriaItem kurang"><strong>Kurang</strong><30% kehadiran</div>
+        </div>
+      </div>
+
+      <h3 style="color:#2e7d32;margin:30px 0 15px 0;font-size:16px;">📊 Tabel Penilaian Musyrif</h3>
+      <table class="assessmentTable">
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>Nama Musyrif</th>
+            <th>Kamar</th>
+            <th>Jumlah Absen</th>
+            <th>Persentase</th>
+            <th>Status</th>
+            <th>Penilaian</th>
+          </tr>
+        </thead>
+        <tbody id="reportTableBody"></tbody>
+      </table>
+
+      <div class="chartsSection">
+        <div class="chartBox">
+          <h4>📈 Grafik Kehadiran Mingguan</h4>
+          <canvas id="pdfBarChart"></canvas>
+        </div>
+        <div class="chartBox">
+          <h4>📊 Distribusi Status</h4>
+          <canvas id="pdfPieChart"></canvas>
+        </div>
+      </div>
+
+      <div class="reportFooter">
+        <strong>Catatan:</strong><br>
+        Laporan ini dibuat secara otomatis oleh sistem absensi digital. Data yang tertera adalah hasil rekapitulasi dari absensi yang telah diinput oleh masing-masing musyrif.
+      </div>
+
+      <div class="signatureSection">
+        <div class="signatureBox">
+          <div>Mengetahui,<br><strong>Pengasuh Pondok</strong></div>
+          <div class="signatureLine">(_________________)</div>
+        </div>
+        <div class="signatureBox">
+          <div>Dibuat oleh,<br><strong>Admin Sistem</strong></div>
+          <div class="signatureLine">(_________________)</div>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
     // ================= KONFIGURASI =================
-    // ⚠️ GANTI URL INI DENGAN URL GOOGLE APPS SCRIPT ANDA
+    // ⚠️ PENTING: Ganti URL ini dengan URL Google Apps Script Anda
     const GOOGLE_SCRIPT_URL = "YOUR_GOOGLE_SCRIPT_URL_HERE";
     const ADMIN_PIN = "1234";
     const WA_ADMIN = "6285893588373";
@@ -271,7 +465,7 @@
     ];
 
     let role = null, user = null, data = [];
-    let myChart = null, adminChart = null;
+    let myChart = null, adminChart = null, pdfBarChart = null, pdfPieChart = null;
 
     function switchTab(t) {
       document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
@@ -332,55 +526,20 @@
 
     function showAlert(msg, type='info') {
       const box = document.getElementById('alertBox');
-      const cls = type==='error'?'alertError':type==='success'?'alertSuccess':'alertInfo';
+      const cls = type==='error'?'alertError':'alertSuccess';
       box.innerHTML = `<div class="alert ${cls} show">${msg}</div>`;
       setTimeout(() => box.innerHTML = '', 5000);
     }
 
-    async function testConnection() {
-      if (GOOGLE_SCRIPT_URL === "YOUR_GOOGLE_SCRIPT_URL_HERE") {
-        return showAlert('⚠️ URL Google Script belum diatur! Silakan edit file HTML dan ganti YOUR_GOOGLE_SCRIPT_URL_HERE dengan URL Anda.', 'error');
-      }
-      
-      showAlert('🔄 Testing koneksi ke Google Script...', 'info');
-      
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-        
-        const res = await fetch(GOOGLE_SCRIPT_URL, { 
-          method: 'GET',
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        
-        if (res.ok) {
-          const data = await res.json();
-          showAlert(`✅ Koneksi berhasil! Data tersimpan: ${data.length} record`, 'success');
-        } else {
-          showAlert(`❌ Error HTTP: ${res.status}. Pastikan deploy sebagai Web App dengan akses "Anyone"`, 'error');
-        }
-      } catch (e) {
-        showAlert(`❌ Gagal koneksi: ${e.message}\n\nPastikan:\n1. URL Google Script benar\n2. Deploy sebagai Web App\n3. Who has access: Anyone`, 'error');
-      }
-    }
-
     async function loadData() {
       if (GOOGLE_SCRIPT_URL === "YOUR_GOOGLE_SCRIPT_URL_HERE") {
-        return showAlert('⚠️ URL Google Script belum diatur! Edit file HTML dan ganti YOUR_GOOGLE_SCRIPT_URL_HERE.', 'error');
+        return showAlert('⚠️ URL Google Script belum diatur! Silakan hubungi administrator untuk konfigurasi.', 'error');
       }
       
       try {
         showAlert('🔄 Memuat data...', 'info');
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
         
-        const res = await fetch(GOOGLE_SCRIPT_URL, {
-          method: 'GET',
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        
+        const res = await fetch(GOOGLE_SCRIPT_URL);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         data = await res.json();
         
@@ -395,11 +554,7 @@
         showAlert(`✅ Berhasil memuat ${data.length} data`, 'success');
       } catch (e) {
         console.error('Error:', e);
-        if (e.name === 'AbortError') {
-          showAlert('⏳ Request timeout. Koneksi terlalu lambat atau URL salah.', 'error');
-        } else {
-          showAlert(`❌ Gagal muat data: ${e.message}\n\nSolusi:\n1. Pastikan URL Google Script benar\n2. Cek deploy Google Script (harus "Anyone")\n3. Periksa koneksi internet`, 'error');
-        }
+        showAlert(`❌ Gagal muat data. Periksa koneksi internet atau hubungi administrator.`, 'error');
       }
     }
 
@@ -412,6 +567,13 @@
       document.getElementById('sWeek').textContent = data.filter(d => new Date(d.Timestamp) >= weekAgo).length;
       document.getElementById('sMonth').textContent = data.filter(d => new Date(d.Timestamp) >= monthAgo).length;
       document.getElementById('sTotal').textContent = data.length;
+    }
+
+    function getAssessment(pct) {
+      if (pct >= 70) return { status: 'Sangat Aktif', class: 'sangat-aktif', color: '#2e7d32', grade: 'A' };
+      if (pct >= 50) return { status: 'Aktif', class: 'aktif', color: '#f57c00', grade: 'B' };
+      if (pct >= 30) return { status: 'Cukup', class: 'cukup', color: '#1976d2', grade: 'C' };
+      return { status: 'Kurang', class: 'kurang', color: '#d32f2f', grade: 'D' };
     }
 
     function renderPerfChart() {
@@ -446,9 +608,8 @@
       pc.innerHTML = names.map(n => {
         const count = data.filter(d => d['Nama Musyrif'] === n && new Date(d.Timestamp) >= weekAgo).length;
         const pct = Math.min(100, Math.round((count/7)*100));
-        const color = pct >= 70 ? '#2e7d32' : pct >= 50 ? '#f57c00' : '#d32f2f';
-        const status = pct >= 70 ? 'Sangat Aktif' : pct >= 50 ? 'Aktif' : 'Kurang';
-        return `<div style="padding:12px;background:#f9f9f9;border-radius:8px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;"><div><strong>${n}</strong><br><small style="color:#757575;">${MUSYRIF_DB[n].room}</small></div><span style="color:${color};font-weight:600;">${status} (${pct}%)</span></div>`;
+        const assessment = getAssessment(pct);
+        return `<div style="padding:12px;background:#f9f9f9;border-radius:8px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;"><div><strong>${n}</strong><br><small style="color:#757575;">${MUSYRIF_DB[n].room}</small></div><span class="statusBadge ${assessment.class}">${assessment.status} (${pct}%)</span></div>`;
       }).join('');
     }
 
@@ -620,50 +781,119 @@
     function generatePDF() {
       if (data.length === 0) return showAlert('⚠️ Tidak ada data untuk laporan!', 'error');
       
+      // Show report section
       document.getElementById('reportSection').style.display = 'block';
       document.getElementById('rDate').textContent = new Date().toLocaleString('id-ID');
       
-      let html = '';
-      let totalAbsen = 0;
+      // Generate table content
       const weekAgo = new Date(Date.now() - 7*24*60*60*1000);
+      let totalAbsen = 0;
+      let tableHTML = '';
       
       Object.keys(MUSYRIF_DB).forEach((name, idx) => {
         const musyrifData = data.filter(d => d['Nama Musyrif'] === name && new Date(d.Timestamp) >= weekAgo);
         const count = musyrifData.length;
         totalAbsen += count;
         const pct = Math.min(100, Math.round((count/7)*100));
-        let status = 'Kurang', color = '#d32f2f';
-        if (pct >= 70) { status = 'Sangat Aktif'; color = '#2e7d32'; }
-        else if (pct >= 50) { status = 'Aktif'; color = '#f57c00'; }
-        else if (pct >= 30) { status = 'Cukup'; color = '#1976d2'; }
+        const assessment = getAssessment(pct);
         
-        html += `<tr><td>${idx+1}</td><td><strong>${name}</strong></td><td>${MUSYRIF_DB[name].room}</td><td>${count} kali</td><td>${pct}%</td><td style="color:${color};font-weight:600;">${status}</td></tr>`;
+        tableHTML += `<tr>
+          <td>${idx+1}</td>
+          <td><strong>${name}</strong></td>
+          <td>${MUSYRIF_DB[name].room}</td>
+          <td>${count} kali</td>
+          <td>${pct}%</td>
+          <td><span class="statusBadge ${assessment.class}">${assessment.status}</span></td>
+          <td><strong>Grade ${assessment.grade}</strong></td>
+        </tr>`;
       });
       
       document.getElementById('rAbsen').textContent = totalAbsen;
-      document.getElementById('asramaReports').innerHTML = `
-        <h3 style="color:#2e7d32;margin:30px 0 15px 0;">📊 Tabel Penilaian Musyrif</h3>
-        <table class="assessmentTable">
-          <thead><tr><th>No</th><th>Nama Musyrif</th><th>Kamar</th><th>Jumlah Absen</th><th>Persentase</th><th>Status</th></tr></thead>
-          <tbody>${html}</tbody>
-        </table>
-      `;
+      document.getElementById('reportTableBody').innerHTML = tableHTML;
       
+      // Render charts after a short delay to ensure DOM is ready
       setTimeout(() => {
-        const { jsPDF } = window.jspdf;
-        html2canvas(document.getElementById('reportSection'), { scale: 2, useCORS: true }).then(canvas => {
-          const imgData = canvas.toDataURL('image/png');
-          const pdf = new jsPDF('p', 'mm', 'a4');
-          const pdfWidth = pdf.internal.pageSize.getWidth();
-          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-          pdf.save(`Laporan_Kinerja_${new Date().toISOString().slice(0,10)}.pdf`);
-          document.getElementById('reportSection').style.display = 'none';
-          showAlert('✅ Laporan PDF berhasil diunduh!', 'success');
-        }).catch(err => {
-          showAlert('❌ Gagal generate PDF: ' + err.message, 'error');
-          document.getElementById('reportSection').style.display = 'none';
+        // Bar Chart
+        const barCtx = document.getElementById('pdfBarChart').getContext('2d');
+        const names = Object.keys(MUSYRIF_DB);
+        const barData = names.map(n => {
+          const count = data.filter(d => d['Nama Musyrif'] === n && new Date(d.Timestamp) >= weekAgo).length;
+          return Math.min(100, Math.round((count/7)*100));
         });
+        
+        if (pdfBarChart) pdfBarChart.destroy();
+        pdfBarChart = new Chart(barCtx, {
+          type: 'bar',
+          data: {
+            labels: names,
+            datasets: [{
+              label: 'Kehadiran (%)',
+              data: barData,
+              backgroundColor: barData.map(p => p >= 70 ? '#2e7d32' : p >= 50 ? '#f57c00' : p >= 30 ? '#1976d2' : '#d32f2f'),
+              borderRadius: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { beginAtZero: true, max: 100 }
+            }
+          }
+        });
+        
+        // Pie Chart
+        const statusCount = { 'Sangat Aktif': 0, 'Aktif': 0, 'Cukup': 0, 'Kurang': 0 };
+        names.forEach(n => {
+          const count = data.filter(d => d['Nama Musyrif'] === n && new Date(d.Timestamp) >= weekAgo).length;
+          const pct = Math.min(100, Math.round((count/7)*100));
+          const status = getAssessment(pct).status;
+          statusCount[status]++;
+        });
+        
+        const pieCtx = document.getElementById('pdfPieChart').getContext('2d');
+        if (pdfPieChart) pdfPieChart.destroy();
+        pdfPieChart = new Chart(pieCtx, {
+          type: 'pie',
+          data: {
+            labels: Object.keys(statusCount),
+            datasets: [{
+              data: Object.values(statusCount),
+              backgroundColor: ['#2e7d32', '#f57c00', '#1976d2', '#d32f2f']
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false
+          }
+        });
+        
+        // Generate PDF after charts are rendered
+        setTimeout(() => {
+          const { jsPDF } = window.jspdf;
+          
+          html2canvas(document.getElementById('reportSection'), { 
+            scale: 2, 
+            useCORS: true,
+            logging: false
+          }).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save(`Laporan_Kinerja_Musyrif_${new Date().toISOString().slice(0,10)}.pdf`);
+            
+            document.getElementById('reportSection').style.display = 'none';
+            showAlert('✅ Laporan PDF berhasil diunduh!', 'success');
+          }).catch(err => {
+            console.error('PDF Error:', err);
+            showAlert('❌ Gagal generate PDF: ' + err.message, 'error');
+            document.getElementById('reportSection').style.display = 'none';
+          });
+        }, 1000);
       }, 500);
     }
 
@@ -674,6 +904,7 @@
       window.open(`https://wa.me/?text=${encodeURIComponent(`*REMINDER ABSENSI*\n\nYth. ${miss.join(', ')},\n\nAnda belum absen hari ini. Mohon segera melakukan absensi.\n\nTerima kasih.`)}`, '_blank');
     }
 
+    // Auto refresh schedule every minute
     setInterval(() => { if(role) { renderSched(); updJobs(); } }, 60000);
     renderSched();
     updJobs();
