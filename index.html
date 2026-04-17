@@ -212,7 +212,7 @@
       <div class="card">
         <h2>📝 Input Absensi</h2>
         <form id="absen-form">
-          <div class="form-group"><label>Kegiatan</label><select id="act-select" required><option value="">-- Pilih Kegiatan --</option></select><small id="act-msg">Menunggu jadwal...</small></div>
+          <div class="form-group"><label>Kegiatan</label><select id="act-select" required><option value="">-- Pilih Kegiatan --</option></select><small id="act-msg" style="color:var(--success);font-weight:600;">✅ Semua kegiatan tersedia untuk testing</small></div>
           <div class="form-group"><label>Foto Kegiatan</label><input type="file" id="photo-in" accept="image/*" capture="user" required><small>📷 Gunakan kamera depan untuk foto bukti kegiatan</small></div>
           <div class="form-group"><label>Catatan</label><textarea id="notes" rows="2"></textarea></div>
           <button type="submit" class="btn btn-primary" id="sub-btn">✅ Kirim Absensi</button>
@@ -227,7 +227,6 @@
   <div class="modal" id="p-modal" onclick="this.classList.remove('active')"><img id="p-img"></div>
 
   <script>
-    // ================= KONFIGURASI =================
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxZf_fvTjMpEIGdBhoNkkL23Af3IU8TcU1w4f7uUfRcf3fCpfNWKt5TTIVz3VkC6w8YPw/exec";
     const ADMIN_PIN = "1234";
     const WA_ADMIN = "6285893588373";
@@ -249,7 +248,6 @@
       { n: "Menertibkan Jam Tidur", t: "21:30", e: "22:00", days: [0,1,2,3,4,5,6] }
     ];
 
-    // Data dummy untuk testing
     let testData = [];
     let role = null, user = null, data = [], myChart = null, adminChart = null, currentAsrama = null;
     
@@ -331,17 +329,19 @@
       const now = new Date(), nm = now.getHours()*60+now.getMinutes(), day = now.getDay();
       const sel = document.getElementById('act-select'), msg = document.getElementById('act-msg');
       sel.innerHTML = '<option value="">-- Pilih Kegiatan --</option>';
-      let act = false;
+      
+      // MODE TESTING: Semua kegiatan tersedia tanpa batas waktu
       JOBS.filter(j => j.days.includes(day)).forEach(j => {
         const s = j.tf ? j.tf : j.t;
-        const [sh,sm]=s.split(':').map(Number), [eh,em]=j.e.split(':').map(Number);
-        const st=sh*60+sm, et=eh*60+em, ok = nm>=st && nm<=et;
-        const o = document.createElement('option'); o.value=j.n; o.textContent=`${j.n} (${s}-${j.e})`;
-        if(!ok) { o.disabled=true; o.textContent+=' (Di luar jadwal)'; } else { o.selected=true; act=true; }
+        const o = document.createElement('option');
+        o.value = j.n;
+        o.textContent = `${j.n} (${s}-${j.e})`;
+        o.selected = true;
         sel.appendChild(o);
       });
-      msg.textContent = act ? '✅ Pilih kegiatan aktif' : '⚠️ Tidak ada kegiatan berjalan';
-      msg.style.color = act ? 'var(--success)' : 'var(--warning)';
+      
+      msg.textContent = '✅ Semua kegiatan tersedia untuk testing';
+      msg.style.color = 'var(--success)';
     }
 
     function getStats(nm) {
@@ -369,11 +369,11 @@
       if(myChart) myChart.destroy();
       myChart = new Chart(ctx, {
         type: 'bar',
-        data: {
+         {
           labels: days,
           datasets: [{
             label: 'Jumlah Absensi',
-            data: chartData,
+             chartData,
             backgroundColor: ['rgba(46,125,50,0.8)','rgba(76,175,80,0.8)','rgba(139,195,74,0.8)','rgba(205,220,57,0.8)','rgba(255,193,7,0.8)','rgba(255,152,0,0.8)','rgba(244,67,54,0.8)'],
             borderWidth: 2,
             borderRadius: 8
@@ -421,11 +421,11 @@
       if(adminChart) adminChart.destroy();
       adminChart = new Chart(ctx2, {
         type: 'bar',
-        data: {
+         {
           labels: names,
           datasets: [{
             label: 'Kehadiran Minggu Ini (%)',
-            data: perfData,
+             perfData,
             backgroundColor: colors,
             borderWidth: 2
           }]
@@ -439,12 +439,10 @@
     }
 
     async function loadData() {
-      // Gunakan data dummy untuk testing
       data = testData;
       if (role === 'admin') { updAdminStats(); renderAdminTable(); }
       else { renderMyTable(); showStats(); }
       
-      // Coba fetch dari Google Script (optional)
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
@@ -480,16 +478,8 @@
       if (!act) { alert('⚠️ Pilih kegiatan terlebih dahulu!'); return; }
       if (!photo) { alert('⚠️ Upload foto kegiatan menggunakan kamera depan!'); return; }
       
-      const now=new Date(), nm=now.getHours()*60+now.getMinutes(), day = now.getDay();
-      const j = JOBS.find(x=>x.n===act && x.days.includes(day));
-      if(j) {
-        const s=j.tf?j.tf:j.t, [sh,sm]=s.split(':').map(Number), [eh,em]=j.e.split(':').map(Number);
-        if(nm<sh*60+sm || nm>eh*60+em) return alert('❌ Absensi hanya bisa dilakukan saat jadwal kegiatan berlangsung!');
-      }
-      
       const btn = document.getElementById('sub-btn'); btn.disabled=true; btn.textContent='Mengirim...';
       
-      // Simpan ke data dummy untuk testing
       const reader = new FileReader();
       reader.onload = function(ev) {
         const newData = {
