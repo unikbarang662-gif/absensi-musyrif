@@ -80,6 +80,9 @@
     @media print { .no-print, #login-screen, header .logout-btn, .btn-group, .admin-section { display: none !important; } .report-section { display: block !important; } body { background: white; padding: 0; } .card { box-shadow: none; border: 1px solid #ddd; } }
     @media (max-width: 600px) { .schedule-grid { grid-template-columns: 1fr; } .btn-group { flex-direction: column; } .stats-summary { grid-template-columns: 1fr; } .chart-container { height: 200px; } .grade-legend { grid-template-columns: repeat(2, 1fr); } .report-meta { grid-template-columns: 1fr; } }
     .demo-badge { background: #ff9800; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; display: inline-block; margin-left: 8px; }
+    .test-mode-box { background: #fff3e0; border: 1px dashed #f57c00; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
+    .test-mode-box label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500; color: #e65100; }
+    .test-mode-box input[type="checkbox"] { transform: scale(1.2); }
   </style>
 </head>
 <body>
@@ -198,6 +201,14 @@
       <div class="card">
         <h2>📝 Input Absensi <span class="demo-badge">DEMO MODE</span></h2>
         <form id="absen-form">
+          <!-- FITUR BARU: Mode Testing -->
+          <div class="test-mode-box">
+            <label>
+              <input type="checkbox" id="test-mode-check" onchange="toggleTestMode(this.checked)">
+              🧪 <b>Mode Testing:</b> Aktifkan semua jadwal (abaikan waktu)
+            </label>
+          </div>
+          
           <div class="form-group"><label>Kegiatan</label><select id="act-select" required><option value="">-- Pilih Kegiatan --</option></select><small id="act-msg">Menunggu jadwal...</small></div>
           <div class="form-group"><label>Catatan</label><textarea id="notes" rows="2"></textarea></div>
           <button type="submit" class="btn btn-primary" id="sub-btn">✅ Simpan Absensi (Demo)</button>
@@ -211,9 +222,9 @@
   </div>
 
   <script>
-    // ================= MODE DEMO - TIDAK PERLU GOOGLE SCRIPT =================
-    const USE_DEMO_MODE = true; // Set ke false jika ingin pakai Google Script
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxZf_fvTjMpEIGdBhoNkkL23Af3IU8tCUI1/exec";
+    // ================= MODE DEMO & KONFIGURASI =================
+    const USE_DEMO_MODE = true; // Data tersimpan di browser (tidak perlu Google Script)
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxZf_fvTjMpEIGdBhoNkkL23Af3IU8tCUI1/exec"; // Tidak dipakai jika USE_DEMO_MODE = true
     const ADMIN_PIN = "1234";
     const WA_ADMIN = "6285893588373";
     const MUSYRIF_BY_ASMARA = {
@@ -234,6 +245,7 @@
     
     let role = null, user = null, data = [], myChart = null, adminChart = null, currentAsrama = null;
     let demoData = []; // Data untuk mode demo
+    let forceActive = false; // Variabel untuk mode testing
     
     function switchTab(t) {
       document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -302,26 +314,42 @@
       document.getElementById('sched-grid').innerHTML = JOBS.filter(j => j.days.includes(day)).map(j => {
         const [sh,sm]=j.t.split(':').map(Number), [eh,em]=j.e.split(':').map(Number);
         const st=sh*60+sm, et=eh*60+em;
-        const cls = nm>=st && nm<=et ? 'active' : nm>et ? 'done' : '';
-        const txt = cls==='active' ? '🟢 Berjalan' : cls==='done' ? '✅ Selesai' : '⏳ Belum';
+        // Jika mode testing aktif, anggap semua aktif
+        const cls = forceActive ? 'active' : (nm>=st && nm<=et ? 'active' : nm>et ? 'done' : '');
+        const txt = forceActive ? '🔥 TESTING' : (cls==='active' ? '🟢 Berjalan' : cls==='done' ? '✅ Selesai' : '⏳ Belum');
         return `<div class="schedule-item ${cls}"><div class="time">${j.t} - ${j.e}</div><div style="margin:4px 0;font-weight:500;">${j.n}</div><div style="font-size:0.8rem;color:var(--text-light);">${txt}</div></div>`;
       }).join('');
     }
     
+    function toggleTestMode(isChecked) {
+      forceActive = isChecked;
+      updJobs();
+      renderSched();
+      if(isChecked) {
+        alert('🧪 Mode Testing AKTIF!\nSemua kegiatan bisa dipilih sekarang.');
+      }
+    }
+
     function updJobs() {
       const now = new Date(), nm = now.getHours()*60+now.getMinutes(), day = now.getDay();
       const sel = document.getElementById('act-select'), msg = document.getElementById('act-msg');
       sel.innerHTML = '<option value="">-- Pilih Kegiatan --</option>';
       let act = false;
+      
       JOBS.filter(j => j.days.includes(day)).forEach(j => {
         const [sh,sm]=j.t.split(':').map(Number), [eh,em]=j.e.split(':').map(Number);
-        const st=sh*60+sm, et=eh*60+em, ok = nm>=st && nm<=et;
+        const st=sh*60+sm, et=eh*60+em;
+        
+        // LOGIKA BARU: Jika forceActive true, abaikan waktu
+        const ok = forceActive || (nm>=st && nm<=et);
+        
         const o = document.createElement('option'); o.value=j.n; o.textContent=`${j.n} (${j.t}-${j.e})`;
         if(!ok) { o.disabled=true; o.textContent+=' (Di luar jadwal)'; } else { o.selected=true; act=true; }
         sel.appendChild(o);
       });
-      msg.textContent = act ? '✅ Pilih kegiatan aktif' : '⚠️ Tidak ada kegiatan berjalan';
-      msg.style.color = act ? 'var(--success)' : 'var(--warning)';
+      
+      msg.textContent = forceActive ? '🧪 TESTING: Pilih kegiatan apa saja' : (act ? '✅ Pilih kegiatan aktif' : '⚠️ Tidak ada kegiatan berjalan');
+      msg.style.color = act || forceActive ? 'var(--success)' : 'var(--warning)';
     }
 
     function getStats(nm) {
@@ -349,11 +377,11 @@
       if(myChart) myChart.destroy();
       myChart = new Chart(ctx, {
         type: 'bar',
-        data: {
+         {
           labels: days,
           datasets: [{
             label: 'Jumlah Absensi',
-            data: chartData,
+             chartData,
             backgroundColor: ['rgba(46,125,50,0.8)','rgba(76,175,80,0.8)','rgba(139,195,74,0.8)','rgba(205,220,57,0.8)','rgba(255,193,7,0.8)','rgba(255,152,0,0.8)','rgba(244,67,54,0.8)'],
             borderWidth: 2,
             borderRadius: 8
@@ -424,7 +452,7 @@
         data = demoData;
         if (role === 'admin') { updAdminStats(); renderAdminTable(); }
         else { renderMyTable(); showStats(); }
-        alert('✅ MODE DEMO - Data tersimpan di browser (tidak permanent)');
+        // alert('✅ MODE DEMO - Data tersimpan di browser');
         return;
       }
       
