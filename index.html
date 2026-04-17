@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Absensi Musyrif - Laporan PDF</title>
+  <title>Absensi Musyrif - Siap Testing</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -227,6 +227,7 @@
   <div class="modal" id="p-modal" onclick="this.classList.remove('active')"><img id="p-img"></div>
 
   <script>
+    // ================= KONFIGURASI =================
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxZf_fvTjMpEIGdBhoNkkL23Af3IU8TcU1w4f7uUfRcf3fCpfNWKt5TTIVz3VkC6w8YPw/exec";
     const ADMIN_PIN = "1234";
     const WA_ADMIN = "6285893588373";
@@ -248,6 +249,8 @@
       { n: "Menertibkan Jam Tidur", t: "21:30", e: "22:00", days: [0,1,2,3,4,5,6] }
     ];
 
+    // Data dummy untuk testing
+    let testData = [];
     let role = null, user = null, data = [], myChart = null, adminChart = null, currentAsrama = null;
     
     function switchTab(t) {
@@ -436,15 +439,24 @@
     }
 
     async function loadData() {
+      // Gunakan data dummy untuk testing
+      data = testData;
+      if (role === 'admin') { updAdminStats(); renderAdminTable(); }
+      else { renderMyTable(); showStats(); }
+      
+      // Coba fetch dari Google Script (optional)
       try {
-        const res = await fetch(GOOGLE_SCRIPT_URL);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        data = await res.json();
-        if (role === 'admin') { updAdminStats(); renderAdminTable(); }
-        else { renderMyTable(); showStats(); }
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const res = await fetch(GOOGLE_SCRIPT_URL, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (res.ok) {
+          data = await res.json();
+          if (role === 'admin') { updAdminStats(); renderAdminTable(); }
+          else { renderMyTable(); showStats(); }
+        }
       } catch (e) {
-        console.error('Error:', e);
-        alert('❌ Gagal koneksi ke Google Script.\n\nPeriksa:\n1. URL sudah benar & diakhiri /exec\n2. Deploy sebagai Web App\n3. Who has access: Anyone\n4. Internet stabil');
+        console.log('Menggunakan data dummy untuk testing');
       }
     }
     
@@ -467,27 +479,44 @@
       const photo = document.getElementById('photo-in').files[0];
       if (!act) { alert('⚠️ Pilih kegiatan terlebih dahulu!'); return; }
       if (!photo) { alert('⚠️ Upload foto kegiatan menggunakan kamera depan!'); return; }
+      
       const now=new Date(), nm=now.getHours()*60+now.getMinutes(), day = now.getDay();
       const j = JOBS.find(x=>x.n===act && x.days.includes(day));
       if(j) {
         const s=j.tf?j.tf:j.t, [sh,sm]=s.split(':').map(Number), [eh,em]=j.e.split(':').map(Number);
         if(nm<sh*60+sm || nm>eh*60+em) return alert('❌ Absensi hanya bisa dilakukan saat jadwal kegiatan berlangsung!');
       }
+      
       const btn = document.getElementById('sub-btn'); btn.disabled=true; btn.textContent='Mengirim...';
-      try {
-        const b64 = await new Promise((r,j)=>{const rd=new FileReader();rd.onload=()=>r(rd.result);rd.onerror=j;rd.readAsDataURL(photo);});
-        const pay = {musyrif:user.name, kamar:user.room, asrama: currentAsrama ? MUSYRIF_BY_ASMARA[currentAsrama].name : '', kegiatan:act, foto:b64, catatan:document.getElementById('notes').value};
-        const res = await fetch(GOOGLE_SCRIPT_URL, {method:'POST', body:JSON.stringify(pay)});
-        const out = await res.json();
-        if(out.status==='success') { alert('✅ Absensi berhasil dikirim!'); document.getElementById('absen-form').reset(); loadData(); showStats(); }
-        else throw new Error(out.message);
-      } catch(err) { alert('❌ Gagal: '+err.message); }
-      finally { btn.disabled=false; btn.textContent='✅ Kirim Absensi'; }
+      
+      // Simpan ke data dummy untuk testing
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        const newData = {
+          Timestamp: new Date().toISOString(),
+          'Nama Musyrif': user.name,
+          Asrma: currentAsrama ? MUSYRIF_BY_ASMARA[currentAsrama].name : '',
+          Kamar: user.room,
+          Kegiatan: act,
+          Foto: ev.target.result,
+          Catatan: document.getElementById('notes').value
+        };
+        testData.push(newData);
+        data = testData;
+        
+        alert('✅ Absensi berhasil dikirim! (Mode Testing)');
+        document.getElementById('absen-form').reset();
+        loadData();
+        if(role === 'musyrif') showStats();
+        btn.disabled=false; btn.textContent='✅ Kirim Absensi';
+      };
+      reader.readAsDataURL(photo);
     };
 
     async function delRow(ts, nm) {
       if(!confirm(`Hapus data ${nm}?\n${ts}`)) return;
-      await fetch(GOOGLE_SCRIPT_URL, {method:'POST', body:JSON.stringify({action:'delete', timestamp:ts, musyrif:nm})});
+      testData = testData.filter(d => d.Timestamp !== ts);
+      data = testData;
       loadData();
     }
     
