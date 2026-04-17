@@ -211,7 +211,8 @@
   </div>
 
   <script>
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxZf_fvTjMpEIGdBhoNkkL23Af3IU8TcU1w4f7uUfRcf3fCpfNWKt5TTIVz3VkC6w8YPw/exec";
+    // URL SUDAH SAYA ISI OTOMATIS
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxZf_fvTjMpEIGdBhoNkkL23Af3IU8tCUI1/exec";
     const ADMIN_PIN = "1234";
     const WA_ADMIN = "6285893588373";
     const MUSYRIF_BY_ASMARA = {
@@ -347,7 +348,7 @@
       if(myChart) myChart.destroy();
       myChart = new Chart(ctx, {
         type: 'bar',
-        data: {
+         {
           labels: days,
           datasets: [{
             label: 'Jumlah Absensi',
@@ -399,11 +400,11 @@
       if(adminChart) adminChart.destroy();
       adminChart = new Chart(ctx2, {
         type: 'bar',
-        data: {
+         {
           labels: names,
           datasets: [{
             label: 'Kehadiran Minggu Ini (%)',
-            data: perfData,
+             perfData,
             backgroundColor: colors,
             borderWidth: 2
           }]
