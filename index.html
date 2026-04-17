@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Absensi Musyrif - Siap Pakai</title>
+  <title>Absensi Musyrif - Laporan PDF</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -79,10 +79,6 @@
     .asrama-section h3 { color: var(--primary); margin-bottom: 15px; border-bottom: 2px solid var(--primary); padding-bottom: 10px; }
     @media print { .no-print, #login-screen, header .logout-btn, .btn-group, .admin-section { display: none !important; } .report-section { display: block !important; } body { background: white; padding: 0; } .card { box-shadow: none; border: 1px solid #ddd; } }
     @media (max-width: 600px) { .schedule-grid { grid-template-columns: 1fr; } .btn-group { flex-direction: column; } .stats-summary { grid-template-columns: 1fr; } .chart-container { height: 200px; } .grade-legend { grid-template-columns: repeat(2, 1fr); } .report-meta { grid-template-columns: 1fr; } }
-    .demo-badge { background: #ff9800; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; display: inline-block; margin-left: 8px; }
-    .test-mode-box { background: #fff3e0; border: 1px dashed #f57c00; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
-    .test-mode-box label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500; color: #e65100; }
-    .test-mode-box input[type="checkbox"] { transform: scale(1.2); }
   </style>
 </head>
 <body>
@@ -123,7 +119,7 @@
 
   <div id="main-app">
     <header>
-      <h1 id="app-title">Dashboard <span class="demo-badge">MODE DEMO</span></h1>
+      <h1 id="app-title">Dashboard</h1>
       <p id="user-label" style="font-size:0.9rem;opacity:0.9;margin-top:4px;"></p>
       <button class="logout-btn" onclick="location.reload()">Keluar</button>
     </header>
@@ -189,7 +185,7 @@
     </div>
     <div id="musyrif-view">
       <div class="stats-panel" id="stats-panel" style="display:none;">
-        <h3>📊 Grafik Kehadiran Anda <span class="demo-badge">DEMO</span></h3>
+        <h3>📊 Grafik Kehadiran Anda <span class="readonly-badge">Read-Only</span></h3>
         <div class="chart-container"><canvas id="attendanceChart"></canvas></div>
         <div class="stats-summary">
           <div class="stat-box"><div class="label">Harian</div><div class="value" id="ms-d">0%</div><div class="bar"><div id="mb-d" class="fill" style="width:0%"></div></div></div>
@@ -199,53 +195,41 @@
       </div>
       <div class="card"><h2>📅 Jadwal Hari Ini</h2><div class="schedule-grid" id="sched-grid"></div></div>
       <div class="card">
-        <h2>📝 Input Absensi <span class="demo-badge">DEMO MODE</span></h2>
+        <h2>📝 Input Absensi</h2>
         <form id="absen-form">
-          <!-- FITUR BARU: Mode Testing -->
-          <div class="test-mode-box">
-            <label>
-              <input type="checkbox" id="test-mode-check" onchange="toggleTestMode(this.checked)">
-              🧪 <b>Mode Testing:</b> Aktifkan semua jadwal (abaikan waktu)
-            </label>
-          </div>
-          
           <div class="form-group"><label>Kegiatan</label><select id="act-select" required><option value="">-- Pilih Kegiatan --</option></select><small id="act-msg">Menunggu jadwal...</small></div>
+          <div class="form-group"><label>Foto Kegiatan</label><input type="file" id="photo-in" accept="image/*" capture="user" required><small>📷 Gunakan kamera depan untuk foto bukti kegiatan</small></div>
           <div class="form-group"><label>Catatan</label><textarea id="notes" rows="2"></textarea></div>
-          <button type="submit" class="btn btn-primary" id="sub-btn">✅ Simpan Absensi (Demo)</button>
+          <button type="submit" class="btn btn-primary" id="sub-btn">✅ Kirim Absensi</button>
         </form>
       </div>
       <div class="card">
-        <h2>📜 Riwayat Absensi Saya</h2>
-        <div style="overflow-x:auto;"><table class="history-table"><thead><tr><th>Waktu</th><th>Kegiatan</th><th>Catatan</th></tr></thead><tbody id="my-tbody"><tr><td colspan="3" style="text-align:center;padding:15px;color:var(--text-light);">Belum ada riwayat</td></tr></tbody></table></div>
+        <h2>📜 Riwayat Absensi Saya <span class="readonly-badge">Tidak Dapat Dihapus</span></h2>
+        <div style="overflow-x:auto;"><table class="history-table"><thead><tr><th>Waktu</th><th>Kegiatan</th><th>Foto</th></tr></thead><tbody id="my-tbody"><tr><td colspan="3" style="text-align:center;padding:15px;color:var(--text-light);">Belum ada riwayat</td></tr></tbody></table></div>
       </div>
     </div>
   </div>
 
   <script>
-    // ================= MODE DEMO & KONFIGURASI =================
-    const USE_DEMO_MODE = true; // Data tersimpan di browser (tidak perlu Google Script)
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxZf_fvTjMpEIGdBhoNkkL23Af3IU8tCUI1/exec"; // Tidak dipakai jika USE_DEMO_MODE = true
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxZf_fvTjMpEIGdBhoNkkL23Af3IU8TcU1w4f7uUfRcf3fCpfNWKt5TTIVz3VkC6w8YPw/exec";
     const ADMIN_PIN = "1234";
     const WA_ADMIN = "6285893588373";
     const MUSYRIF_BY_ASMARA = {
       "al-hakim": { name: "Asrama Al Hakim", musyrif: { "Ali Mashuri": { pass: "ali123", rooms: ["Khondak", "Uhud"] }, "Ali Zahid": { pass: "zahid123", rooms: ["Badar"] }, "Reva Dwi": { pass: "reva123", rooms: ["Khoibar"] }, "Imam Syafi'i": { pass: "imam123", rooms: ["Multazam"] } } },
-      "al-fattah": { name: "Asrama Al Fattah", musyrif: { "Fattahilah": { pass: "fattah123", rooms: ["Quba", "Mekkah"] }, "Brian Adi": { pass: "brian123", rooms: ["Zam-zam"] }, "Babil Yasar": { pass: "babil123", rooms: ["Mina"] }, "Fahmi": { pass: "fahmi123", rooms: ["Arofah"] }, "Wawan Febi": { pass: "wawan123", rooms: ["RBQ"] } } },
-      "al-karim": { name: "Asrama Al Karim", musyrif: { "Bima Julian": { pass: "bima123", rooms: ["101", "102"] }, "Irfan Khoirul": { pass: "irfan123", rooms: ["104", "201"] }, "Rizki Alfian": { pass: "rizki123", rooms: ["203", "204"] } } }
+      "al-fattah": { name: "Asrama Al Fattah", musyrif: { "Fattahilah": { pass: "fattah123", rooms: ["Quba", "Mekkah", "Madinah", "Raudhoh"] }, "Brian Adi Waskito": { pass: "brian123", rooms: ["Bir'Ali", "Zam-zam", "Tan'im", "Thoif"] }, "Babil Yasar": { pass: "babil123", rooms: ["Mina", "Hudaibiyah", "Jeddah", "Ji'ronah"] }, "Fahmi": { pass: "fahmi123", rooms: ["Arofah"] }, "Wawan Febi": { pass: "wawan123", rooms: ["RBQ"] } } },
+      "al-karim": { name: "Asrama Al Karim", musyrif: { "Bima Julian": { pass: "bima123", rooms: ["101", "102", "103"] }, "Irfan Khoirul Aziz": { pass: "irfan123", rooms: ["104", "201", "202"] }, "Rizki Alfian": { pass: "rizki123", rooms: ["203", "204"] } } }
     };
     const JOBS = [
-      { n: "Membangunkan Santri", t: "03:45", e: "04:15", days: [0,1,2,3,4,5,6] },
+      { n: "Membangunkan Santri", t: "03:45", tf: "03:30", e: "04:15", days: [0,1,2,3,4,5,6] },
       { n: "Pengajian Ba'da Subuh", t: "05:00", e: "05:45", days: [0,1,2,3,4,5,6] },
-      { n: "Menggobraki Sekolah Formal", t: "06:30", e: "07:00", days: [0,1,2,3,4,5,6] },
-      { n: "Menggobraki Piket & Maghrib", t: "16:30", e: "17:30", days: [0,1,2,3,4,5,6] },
-      { n: "Mendampingi Dalail", t: "18:00", e: "19:30", days: [1] },
-      { n: "Pendampingan Muthola'ah", t: "19:30", e: "20:30", days: [0,2,3,6] },
-      { n: "Mendampingi Tawasulan", t: "21:00", e: "23:30", days: [4] },
+      { n: "Menggobraki Berangkat Sekolah Formal", t: "06:30", e: "07:00", days: [0,1,2,3,4,5,6] },
+      { n: "Menggobraki Piket Kamar & Persiapan Maghrib", t: "16:30", e: "17:30", days: [0,1,2,3,4,5,6] },
+      { n: "Mengobraki dan Mendampingi Dalail", t: "18:00", e: "19:30", days: [1] },
+      { n: "Mengobraki dan Mendampingi Tawasulan", t: "21:00", e: "23:30", days: [4] },
+      { n: "Pendampingan Jam Muthola'ah", t: "19:30", e: "20:30", days: [0,2,3,6] },
       { n: "Menertibkan Jam Tidur", t: "21:30", e: "22:00", days: [0,1,2,3,4,5,6] }
     ];
-    
     let role = null, user = null, data = [], myChart = null, adminChart = null, currentAsrama = null;
-    let demoData = []; // Data untuk mode demo
-    let forceActive = false; // Variabel untuk mode testing
     
     function switchTab(t) {
       document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -296,7 +280,7 @@
       role = r; user = {name, room}; currentAsrama = asrama;
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('main-app').style.display = 'block';
-      document.getElementById('app-title').innerHTML = (r==='admin' ? '🛡️ Dashboard Admin' : '📋 Absensi Musyrif') + ' <span class="demo-badge">MODE DEMO</span>';
+      document.getElementById('app-title').textContent = r==='admin' ? '🛡️ Dashboard Admin' : '📋 Absensi Musyrif';
       document.getElementById('user-label').textContent = `${name} | ${room} ${asrama ? '| '+MUSYRIF_BY_ASMARA[asrama].name : ''}`;
       if(r==='admin') {
         document.getElementById('admin-panel').style.display = 'block';
@@ -312,44 +296,30 @@
     function renderSched() {
       const now = new Date(), nm = now.getHours()*60+now.getMinutes(), day = now.getDay();
       document.getElementById('sched-grid').innerHTML = JOBS.filter(j => j.days.includes(day)).map(j => {
-        const [sh,sm]=j.t.split(':').map(Number), [eh,em]=j.e.split(':').map(Number);
+        const s = j.tf ? j.tf : j.t;
+        const [sh,sm]=s.split(':').map(Number), [eh,em]=j.e.split(':').map(Number);
         const st=sh*60+sm, et=eh*60+em;
-        // Jika mode testing aktif, anggap semua aktif
-        const cls = forceActive ? 'active' : (nm>=st && nm<=et ? 'active' : nm>et ? 'done' : '');
-        const txt = forceActive ? '🔥 TESTING' : (cls==='active' ? '🟢 Berjalan' : cls==='done' ? '✅ Selesai' : '⏳ Belum');
-        return `<div class="schedule-item ${cls}"><div class="time">${j.t} - ${j.e}</div><div style="margin:4px 0;font-weight:500;">${j.n}</div><div style="font-size:0.8rem;color:var(--text-light);">${txt}</div></div>`;
+        const cls = nm>=st && nm<=et ? 'active' : nm>et ? 'done' : '';
+        const txt = cls==='active' ? '🟢 Berjalan' : cls==='done' ? '✅ Selesai' : '⏳ Belum';
+        return `<div class="schedule-item ${cls}"><div class="time">${s} - ${j.e}</div><div style="margin:4px 0;font-weight:500;">${j.n}</div><div style="font-size:0.8rem;color:var(--text-light);">${txt}</div></div>`;
       }).join('');
     }
     
-    function toggleTestMode(isChecked) {
-      forceActive = isChecked;
-      updJobs();
-      renderSched();
-      if(isChecked) {
-        alert('🧪 Mode Testing AKTIF!\nSemua kegiatan bisa dipilih sekarang.');
-      }
-    }
-
     function updJobs() {
       const now = new Date(), nm = now.getHours()*60+now.getMinutes(), day = now.getDay();
       const sel = document.getElementById('act-select'), msg = document.getElementById('act-msg');
       sel.innerHTML = '<option value="">-- Pilih Kegiatan --</option>';
       let act = false;
-      
       JOBS.filter(j => j.days.includes(day)).forEach(j => {
-        const [sh,sm]=j.t.split(':').map(Number), [eh,em]=j.e.split(':').map(Number);
-        const st=sh*60+sm, et=eh*60+em;
-        
-        // LOGIKA BARU: Jika forceActive true, abaikan waktu
-        const ok = forceActive || (nm>=st && nm<=et);
-        
-        const o = document.createElement('option'); o.value=j.n; o.textContent=`${j.n} (${j.t}-${j.e})`;
+        const s = j.tf ? j.tf : j.t;
+        const [sh,sm]=s.split(':').map(Number), [eh,em]=j.e.split(':').map(Number);
+        const st=sh*60+sm, et=eh*60+em, ok = nm>=st && nm<=et;
+        const o = document.createElement('option'); o.value=j.n; o.textContent=`${j.n} (${s}-${j.e})`;
         if(!ok) { o.disabled=true; o.textContent+=' (Di luar jadwal)'; } else { o.selected=true; act=true; }
         sel.appendChild(o);
       });
-      
-      msg.textContent = forceActive ? '🧪 TESTING: Pilih kegiatan apa saja' : (act ? '✅ Pilih kegiatan aktif' : '⚠️ Tidak ada kegiatan berjalan');
-      msg.style.color = act || forceActive ? 'var(--success)' : 'var(--warning)';
+      msg.textContent = act ? '✅ Pilih kegiatan aktif' : '⚠️ Tidak ada kegiatan berjalan';
+      msg.style.color = act ? 'var(--success)' : 'var(--warning)';
     }
 
     function getStats(nm) {
@@ -377,11 +347,11 @@
       if(myChart) myChart.destroy();
       myChart = new Chart(ctx, {
         type: 'bar',
-         {
+        data: {
           labels: days,
           datasets: [{
             label: 'Jumlah Absensi',
-             chartData,
+            data: chartData,
             backgroundColor: ['rgba(46,125,50,0.8)','rgba(76,175,80,0.8)','rgba(139,195,74,0.8)','rgba(205,220,57,0.8)','rgba(255,193,7,0.8)','rgba(255,152,0,0.8)','rgba(244,67,54,0.8)'],
             borderWidth: 2,
             borderRadius: 8
@@ -447,15 +417,6 @@
     }
 
     async function loadData() {
-      if (USE_DEMO_MODE) {
-        // MODE DEMO - Gunakan data lokal
-        data = demoData;
-        if (role === 'admin') { updAdminStats(); renderAdminTable(); }
-        else { renderMyTable(); showStats(); }
-        // alert('✅ MODE DEMO - Data tersimpan di browser');
-        return;
-      }
-      
       try {
         const res = await fetch(GOOGLE_SCRIPT_URL);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -464,53 +425,39 @@
         else { renderMyTable(); showStats(); }
       } catch (e) {
         console.error('Error:', e);
-        alert('⚠️ MODE DEMO - Google Script tidak tersedia. Data akan disimpan sementara di browser.');
-        USE_DEMO_MODE = true;
-        data = demoData;
-        if (role === 'admin') { updAdminStats(); renderAdminTable(); }
-        else { renderMyTable(); showStats(); }
+        alert('❌ Gagal koneksi ke Google Script.\n\nPeriksa:\n1. URL sudah benar & diakhiri /exec\n2. Deploy sebagai Web App\n3. Who has access: Anyone\n4. Internet stabil');
       }
     }
     
     function renderAdminTable() {
       if (data.length === 0) { document.getElementById('admin-tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-light);">Belum ada data absensi</td></tr>'; return; }
-      document.getElementById('admin-tbody').innerHTML = data.slice().reverse().map(d=>`<tr><td>${new Date(d.Timestamp).toLocaleString()}</td><td>${d['Nama Musyrif']}</td><td>${d.Asrma || '-'}</td><td>${d.Kamar}</td><td>${d.Kegiatan}</td><td>${d.Foto?`<img src="${d.Foto}" class="photo-thumb"`:'-'}</td><td><button class="btn btn-danger" style="padding:4px 8px;font-size:0.7rem;" onclick="delRow('${d.Timestamp}','${d['Nama Musyrif']}')">Hapus</button></td></tr>`).join('');
+      document.getElementById('admin-tbody').innerHTML = data.slice().reverse().map(d=>`<tr><td>${new Date(d.Timestamp).toLocaleString()}</td><td>${d['Nama Musyrif']}</td><td>${d.Asrma || '-'}</td><td>${d.Kamar}</td><td>${d.Kegiatan}</td><td>${d.Foto?`<img src="${d.Foto}" class="photo-thumb" onclick="viewImg('${d.Foto.replace(/'/g,"\\'")}')"`:'-'}</td><td><button class="btn btn-danger" style="padding:4px 8px;font-size:0.7rem;" onclick="delRow('${d.Timestamp}','${d['Nama Musyrif']}')">Hapus</button></td></tr>`).join('');
     }
     
     function renderMyTable() {
       const my = data.filter(d=>d['Nama Musyrif']===user.name).reverse();
       if (my.length === 0) { document.getElementById('my-tbody').innerHTML = '<tr><td colspan="3" style="text-align:center;padding:15px;">Belum ada riwayat</td></tr>'; return; }
-      document.getElementById('my-tbody').innerHTML = my.map(d=>`<tr><td>${new Date(d.Timestamp).toLocaleString()}</td><td>${d.Kegiatan}</td><td>${d.Catatan || '-'}</td></tr>`).join('');
+      document.getElementById('my-tbody').innerHTML = my.map(d=>`<tr><td>${new Date(d.Timestamp).toLocaleString()}</td><td>${d.Kegiatan}</td><td>${d.Foto?`<img src="${d.Foto}" class="photo-thumb" onclick="viewImg('${d.Foto.replace(/'/g,"\\'")}')"`:'-'}</td></tr>`).join('');
     }
+    
+    function viewImg(s) { document.getElementById('p-img').src=s; document.getElementById('p-modal').classList.add('active'); }
 
     document.getElementById('absen-form').onsubmit = async e => {
       e.preventDefault();
       const act = document.getElementById('act-select').value;
-      const catatan = document.getElementById('notes').value;
-      
-      if (USE_DEMO_MODE) {
-        // Simpan ke data demo
-        const newData = {
-          Timestamp: new Date().toISOString(),
-          'Nama Musyrif': user.name,
-          Asrma: currentAsrama ? MUSYRIF_BY_ASMARA[currentAsrama].name : '',
-          Kamar: user.room,
-          Kegiatan: act,
-          Foto: '',
-          Catatan: catatan
-        };
-        demoData.push(newData);
-        data = demoData;
-        alert('✅ Absensi berhasil disimpan (MODE DEMO)');
-        document.getElementById('absen-form').reset();
-        loadData();
-        if (role === 'musyrif') showStats();
-        return;
+      const photo = document.getElementById('photo-in').files[0];
+      if (!act) { alert('⚠️ Pilih kegiatan terlebih dahulu!'); return; }
+      if (!photo) { alert('⚠️ Upload foto kegiatan menggunakan kamera depan!'); return; }
+      const now=new Date(), nm=now.getHours()*60+now.getMinutes(), day = now.getDay();
+      const j = JOBS.find(x=>x.n===act && x.days.includes(day));
+      if(j) {
+        const s=j.tf?j.tf:j.t, [sh,sm]=s.split(':').map(Number), [eh,em]=j.e.split(':').map(Number);
+        if(nm<sh*60+sm || nm>eh*60+em) return alert('❌ Absensi hanya bisa dilakukan saat jadwal kegiatan berlangsung!');
       }
-      
       const btn = document.getElementById('sub-btn'); btn.disabled=true; btn.textContent='Mengirim...';
       try {
-        const pay = {musyrif:user.name, kamar:user.room, asrama: currentAsrama ? MUSYRIF_BY_ASMARA[currentAsrama].name : '', kegiatan:act, foto:'', catatan:catatan};
+        const b64 = await new Promise((r,j)=>{const rd=new FileReader();rd.onload=()=>r(rd.result);rd.onerror=j;rd.readAsDataURL(photo);});
+        const pay = {musyrif:user.name, kamar:user.room, asrama: currentAsrama ? MUSYRIF_BY_ASMARA[currentAsrama].name : '', kegiatan:act, foto:b64, catatan:document.getElementById('notes').value};
         const res = await fetch(GOOGLE_SCRIPT_URL, {method:'POST', body:JSON.stringify(pay)});
         const out = await res.json();
         if(out.status==='success') { alert('✅ Absensi berhasil dikirim!'); document.getElementById('absen-form').reset(); loadData(); showStats(); }
@@ -521,12 +468,6 @@
 
     async function delRow(ts, nm) {
       if(!confirm(`Hapus data ${nm}?\n${ts}`)) return;
-      if (USE_DEMO_MODE) {
-        demoData = demoData.filter(d => d.Timestamp !== ts);
-        data = demoData;
-        loadData();
-        return;
-      }
       await fetch(GOOGLE_SCRIPT_URL, {method:'POST', body:JSON.stringify({action:'delete', timestamp:ts, musyrif:nm})});
       loadData();
     }
