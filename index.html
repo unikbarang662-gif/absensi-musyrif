@@ -211,7 +211,6 @@
   </div>
 
   <script>
-    // URL SUDAH TERPASANG OTOMATIS
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwZniV4VZBmzNihmJ0LUxrItA53YOOLbZpqeutDEuODNHSgxyPa9zEmyw2XCQVjCrZI/exec";
     const ADMIN_PIN = "1234";
     const WA_ADMIN = "6285893588373";
@@ -421,21 +420,42 @@
       try {
         const res = await fetch(GOOGLE_SCRIPT_URL);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        data = await res.json();
+        const result = await res.json();
+        
+        // VALIDASI: Pastikan data adalah array
+        if (Array.isArray(result)) {
+          data = result;
+        } else if (result && Array.isArray(result.data)) {
+          data = result.data;
+        } else {
+          data = [];
+          console.warn('Data tidak dalam format array:', result);
+        }
+        
         if (role === 'admin') { updAdminStats(); renderAdminTable(); }
         else { renderMyTable(); showStats(); }
       } catch (e) {
         console.error('Error:', e);
+        data = []; // Reset data ke array kosong jika error
+        if (role === 'admin') { updAdminStats(); renderAdminTable(); }
+        else { renderMyTable(); showStats(); }
         alert('❌ Gagal koneksi ke Google Script.\n\nPeriksa:\n1. URL sudah benar & diakhiri /exec\n2. Deploy sebagai Web App\n3. Who has access: Anyone\n4. Internet stabil');
       }
     }
     
     function renderAdminTable() {
-      if (data.length === 0) { document.getElementById('admin-tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-light);">Belum ada data absensi</td></tr>'; return; }
+      if (!Array.isArray(data) || data.length === 0) { 
+        document.getElementById('admin-tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-light);">Belum ada data absensi</td></tr>'; 
+        return; 
+      }
       document.getElementById('admin-tbody').innerHTML = data.slice().reverse().map(d=>`<tr><td>${new Date(d.Timestamp).toLocaleString()}</td><td>${d['Nama Musyrif']}</td><td>${d.Asrma || '-'}</td><td>${d.Kamar}</td><td>${d.Kegiatan}</td><td>${d.Foto?`<img src="${d.Foto}" class="photo-thumb" onclick="viewImg('${d.Foto.replace(/'/g,"\\'")}')"`:'-'}</td><td><button class="btn btn-danger" style="padding:4px 8px;font-size:0.7rem;" onclick="delRow('${d.Timestamp}','${d['Nama Musyrif']}')">Hapus</button></td></tr>`).join('');
     }
     
     function renderMyTable() {
+      if (!Array.isArray(data)) {
+        document.getElementById('my-tbody').innerHTML = '<tr><td colspan="3" style="text-align:center;padding:15px;">Error data</td></tr>';
+        return;
+      }
       const my = data.filter(d=>d['Nama Musyrif']===user.name).reverse();
       if (my.length === 0) { document.getElementById('my-tbody').innerHTML = '<tr><td colspan="3" style="text-align:center;padding:15px;">Belum ada riwayat</td></tr>'; return; }
       document.getElementById('my-tbody').innerHTML = my.map(d=>`<tr><td>${new Date(d.Timestamp).toLocaleString()}</td><td>${d.Kegiatan}</td><td>${d.Foto?`<img src="${d.Foto}" class="photo-thumb" onclick="viewImg('${d.Foto.replace(/'/g,"\\'")}')"`:'-'}</td></tr>`).join('');
