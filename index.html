@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Absensi Musyrif - Laporan PDF</title>
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- jsPDF & html2canvas -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
@@ -196,7 +194,7 @@
             <div class="card">
                 <h2>📝 Input Absensi</h2>
                 <form id="absen-form">
-                    <div class="form-group"><label>Kegiatan</label><select id="act-select" required><option value="">-- Pilih Kegiatan --</option></select><small id="act-msg" style="color:var(--success);font-weight:600;">✅ Semua kegiatan tersedia untuk testing</small></div>
+                    <div class="form-group"><label>Kegiatan</label><select id="act-select" required><option value="">-- Pilih Kegiatan --</option></select><small id="act-msg" style="color:var(--success);font-weight:600;">✅ Semua kegiatan tersedia</small></div>
                     <div class="form-group"><label>Foto Kegiatan</label><input type="file" id="photo-in" accept="image/*" capture="user" required><small>📷 Gunakan kamera depan untuk foto bukti kegiatan</small></div>
                     <div class="form-group"><label>Catatan</label><textarea id="notes" rows="2"></textarea></div>
                     <button type="submit" class="btn btn-primary" id="sub-btn">✅ Kirim Absensi</button>
@@ -256,8 +254,8 @@
 
     <script>
         // ================= KONFIGURASI =================
-        // URL Google Script Anda sudah terpasang di sini
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxM1f4NOF_z2XgFix5enZ_pKMtuhhJgkFTgRVDQ-NRetfVLW1TbWJzFCLuSIXJeJKN24A/exec";
+        // GANTI URL INI DENGAN URL GOOGLE APPS SCRIPT ANDA
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxZf_fvTjMpEIGdBhoNkkL23Af3IU8TcU1w4f7uUfRcf3fCpfNWKt5TTIVz3VkC6w8YPw/exec";
         const ADMIN_PIN = "1234";
         const WA_ADMIN = "6285893588373";
         
@@ -268,17 +266,16 @@
         };
 
         const JOBS = [
-            { n: "Membangunkan Santri", t: "03:45", tf: "03:30", e: "04:30", days: [0,1,2,3,4,5,6] },
+            { n: "Membangunkan Santri", t: "03:45", tf: "03:30", e: "04:15", days: [0,1,2,3,4,5,6] },
             { n: "Pengajian Ba'da Subuh", t: "05:00", e: "05:45", days: [0,1,2,3,4,5,6] },
-            { n: "Menggobraki Berangkat Sekolah Formal", t: "06:30", e: "07:30", days: [0,1,2,3,4,5,6] },
+            { n: "Menggobraki Berangkat Sekolah Formal", t: "06:30", e: "07:00", days: [0,1,2,3,4,5,6] },
             { n: "Menggobraki Piket Kamar & Persiapan Maghrib", t: "16:30", e: "17:30", days: [0,1,2,3,4,5,6] },
             { n: "Mengobraki dan Mendampingi Dalail", t: "18:00", e: "19:30", days: [1] },
             { n: "Mengobraki dan Mendampingi Tawasulan", t: "21:00", e: "23:30", days: [4] },
             { n: "Pendampingan Jam Muthola'ah", t: "19:30", e: "20:30", days: [0,2,3,6] },
-            { n: "Menertibkan Jam Tidur", t: "21:30", e: "22:30", days: [0,1,2,3,4,5,6] }
+            { n: "Menertibkan Jam Tidur", t: "21:30", e: "22:00", days: [0,1,2,3,4,5,6] }
         ];
 
-        let testData = [];
         let role = null, user = null, data = [], myChart = null, adminChart = null, currentAsrama = null;
         
         function switchTab(t) {
@@ -369,7 +366,7 @@
                 sel.appendChild(o);
             });
             
-            msg.textContent = '✅ Semua kegiatan tersedia untuk testing';
+            msg.textContent = '✅ Semua kegiatan tersedia';
             msg.style.color = 'var(--success)';
         }
 
@@ -397,14 +394,13 @@
             my.forEach(d => { const date = new Date(d.Timestamp); chartData[date.getDay()]++; });
             if(myChart) myChart.destroy();
             
-            // PERBAIKAN SYNTAX CHART.JS DI SINI
             myChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: days,
                     datasets: [{
                         label: 'Jumlah Absensi',
-                         chartData,
+                        data: chartData,
                         backgroundColor: ['rgba(46,125,50,0.8)','rgba(76,175,80,0.8)','rgba(139,195,74,0.8)','rgba(205,220,57,0.8)','rgba(255,193,7,0.8)','rgba(255,152,0,0.8)','rgba(244,67,54,0.8)'],
                         borderWidth: 2,
                         borderRadius: 8
@@ -450,15 +446,13 @@
                 });
             });
             if(adminChart) adminChart.destroy();
-            
-            // PERBAIKAN SYNTAX CHART.JS DI SINI
             adminChart = new Chart(ctx2, {
                 type: 'bar',
                 data: {
                     labels: names,
                     datasets: [{
                         label: 'Kehadiran Minggu Ini (%)',
-                         perfData,
+                        data: perfData,
                         backgroundColor: colors,
                         borderWidth: 2
                     }]
@@ -472,22 +466,15 @@
         }
 
         async function loadData() {
-            data = testData;
-            if (role === 'admin') { updAdminStats(); renderAdminTable(); }
-            else { renderMyTable(); showStats(); }
-            
             try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 5000);
-                const res = await fetch(GOOGLE_SCRIPT_URL, { signal: controller.signal });
-                clearTimeout(timeoutId);
-                if (res.ok) {
-                    data = await res.json();
-                    if (role === 'admin') { updAdminStats(); renderAdminTable(); }
-                    else { renderMyTable(); showStats(); }
-                }
+                const res = await fetch(GOOGLE_SCRIPT_URL);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                data = await res.json();
+                if (role === 'admin') { updAdminStats(); renderAdminTable(); }
+                else { renderMyTable(); showStats(); }
             } catch (e) {
-                console.log('Menggunakan data dummy untuk testing');
+                console.error('Error:', e);
+                alert('❌ Gagal koneksi ke Google Script.\n\nPastikan:\n1. URL Google Script sudah benar\n2. Deploy sebagai Web App dengan akses "Anyone"\n3. Internet stabil');
             }
         }
         
@@ -528,39 +515,56 @@
             const btn = document.getElementById('sub-btn'); btn.disabled=true; btn.textContent='Mengirim...';
             
             const reader = new FileReader();
-            reader.onload = function(ev) {
-                const newData = {
-                    Timestamp: new Date().toISOString(),
-                    'Nama Musyrif': user.name,
-                    Asrma: currentAsrama ? MUSYRIF_BY_ASMARA[currentAsrama].name : '',
+            reader.onload = async function(ev) {
+                const payload = {
+                    musyrif: user.name,
                     asrama: currentAsrama ? MUSYRIF_BY_ASMARA[currentAsrama].name : '',
-                    Kamar: user.room,
-                    Kegiatan: act,
-                    Foto: ev.target.result,
-                    Catatan: document.getElementById('notes').value
+                    kamar: user.room,
+                    kegiatan: act,
+                    foto: ev.target.result,
+                    catatan: document.getElementById('notes').value
                 };
-                testData.push(newData);
-                data = testData;
                 
-                alert('✅ Absensi berhasil dikirim! (Mode Testing)');
-                document.getElementById('absen-form').reset();
-                loadData();
-                if(role === 'musyrif') showStats();
-                btn.disabled=false; btn.textContent='✅ Kirim Absensi';
+                try {
+                    const res = await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await res.json();
+                    
+                    if (result.result === 'success') {
+                        alert('✅ Absensi berhasil dikirim!');
+                        document.getElementById('absen-form').reset();
+                        loadData();
+                        if(role === 'musyrif') showStats();
+                    } else {
+                        throw new Error(result.message || 'Gagal menyimpan data');
+                    }
+                } catch (err) {
+                    alert('❌ Gagal: ' + err.message);
+                } finally {
+                    btn.disabled=false; btn.textContent='✅ Kirim Absensi';
+                }
             };
             reader.readAsDataURL(photo);
         };
 
         async function delRow(ts, nm) {
             if(!confirm(`Hapus data ${nm}?\n${ts}`)) return;
-            testData = testData.filter(d => d.Timestamp !== ts);
-            data = testData;
-            loadData();
+            try {
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({action: 'delete', timestamp: ts, musyrif: nm})
+                });
+                loadData();
+            } catch (err) {
+                alert('❌ Gagal menghapus data');
+            }
         }
         
         function generatePDF() {
             if(!data.length) {
-                alert('⚠️ Tidak ada data untuk laporan! Silakan input absensi terlebih dahulu.');
+                alert('⚠️ Tidak ada data untuk laporan!');
                 return;
             }
             document.getElementById('report-section').style.display = 'block';
@@ -634,12 +638,12 @@
         }
         
         function generateIndividualPDF() {
-            const musyrifName = prompt('Masukkan nama musyrif yang akan dicetak laporannya:\n\nContoh: Ali Mashuri, Reva Dwi, Ali Zahid, Imam Syafi\'i');
+            const musyrifName = prompt('Masukkan nama musyrif yang akan dicetak laporannya:');
             if (!musyrifName || musyrifName.trim() === '') return;
             
             const musyrifData = data.filter(d => d['Nama Musyrif'] === musyrifName.trim());
             if (!musyrifData.length) {
-                alert('❌ Data absensi untuk musyrif "' + musyrifName + '" tidak ditemukan!\n\nPastikan nama yang dimasukkan sesuai dengan data yang ada.');
+                alert('❌ Data absensi untuk musyrif tersebut tidak ditemukan!');
                 return;
             }
             
