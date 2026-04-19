@@ -99,19 +99,14 @@
     </style>
 </head>
 <body>
-    <!-- LOGIN SCREEN -->
     <div id="login-screen">
         <div class="login-box">
-            <div class="login-header">
-                <h2>📋 Absensi Musyrif</h2>
-                <p style="color:#666;font-size:0.9rem;">Pilih akses masuk</p>
-            </div>
+            <div class="login-header"><h2>📋 Absensi Musyrif</h2><p style="color:#666;font-size:0.9rem;">Pilih akses masuk</p></div>
             <div class="login-tabs">
                 <button class="tab-btn active" onclick="switchTab('musyrif')">👤 Musyrif</button>
                 <button class="tab-btn" onclick="switchTab('admin')">🛡️ Admin</button>
             </div>
             <div id="login-error" class="error-msg"></div>
-            <!-- MUSYRIF FORM -->
             <form id="musyrif-form">
                 <div class="form-group">
                     <label>Asrama</label>
@@ -132,7 +127,6 @@
                 <button type="submit" class="btn btn-primary">🔐 Masuk Musyrif</button>
                 <button type="button" class="btn btn-wa" onclick="waForgot()">💬 Lupa Password? (WA)</button>
             </form>
-            <!-- ADMIN FORM -->
             <form id="admin-form" style="display:none;">
                 <div class="form-group"><label>PIN Admin</label><input type="password" id="a-pin" placeholder="Masukkan PIN Admin" required></div>
                 <button type="submit" class="btn btn-primary">🛡️ Masuk Admin</button>
@@ -140,7 +134,6 @@
         </div>
     </div>
 
-    <!-- MAIN APP -->
     <div id="main-app">
         <header>
             <h1 id="app-title">Dashboard</h1>
@@ -149,7 +142,6 @@
         </header>
         <div id="alert-box"></div>
         
-        <!-- ADMIN PANEL -->
         <div id="admin-panel" class="admin-section">
             <div class="card">
                 <h2>⚙️ Pengaturan & Aksi</h2>
@@ -179,7 +171,6 @@
             </div>
         </div>
 
-        <!-- MUSYRIF VIEW -->
         <div id="musyrif-view">
             <div class="stats-panel" id="stats-panel" style="display:none;">
                 <h3>📊 Grafik Kehadiran Anda <span class="readonly-badge">Read-Only</span></h3>
@@ -212,7 +203,6 @@
         </div>
     </div>
 
-    <!-- REPORT SECTION (Hidden) -->
     <div id="report-section" class="report-section">
         <div class="report-header"><div class="report-title">📊 LAPORAN KINERJA MUSYRIF PER ASRAMA</div><div class="report-subtitle">Pondok Pesantren - Sistem Absensi Digital</div></div>
         <div class="report-meta">
@@ -253,7 +243,6 @@
     <div class="modal" id="p-modal" onclick="this.classList.remove('active')"><img id="p-img"></div>
 
     <script>
-        // ================= KONFIGURASI =================
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyTG5kS6qyiyOeUuMtY3zPbcLB1vq3yKMuVEx2vrkdp_o63nTgP2p-9Rg3qO-J7XPJxrg/exec";
         const ADMIN_PIN = "1234";
         const WA_ADMIN = "6285893588373";
@@ -267,7 +256,7 @@
         const JOBS = [
             { n: "Membangunkan Santri", t: "03:45", tf: "03:30", e: "04:30", days: [0,1,2,3,4,5,6] },
             { n: "Pengajian Ba'da Subuh", t: "05:00", e: "05:45", days: [0,1,2,3,4,5,6] },
-            { n: "Menggobraki Berangkat Sekolah Formal", t: "06:30", e: "07:30", days: [0,1,2,3,4,5,6] },
+            { n: "Menggobraki Berangkat Sekolah Formal", t: "06:00", e: "07:30", days: [0,1,2,3,4,5,6] },
             { n: "Menggobraki Piket Kamar & Persiapan Maghrib", t: "16:30", e: "17:30", days: [0,1,2,3,4,5,6] },
             { n: "Mengobraki dan Mendampingi Dalail", t: "18:00", e: "19:30", days: [1] },
             { n: "Mengobraki dan Mendampingi Tawasulan", t: "21:00", e: "23:30", days: [4] },
@@ -277,6 +266,7 @@
 
         let role = null, user = null, data = [], myChart = null, adminChart = null, currentAsrama = null;
         
+        // Fungsi switchTab
         function switchTab(t) {
             document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
             document.querySelector(`.tab-btn:nth-child(${t==='admin'?2:1})`).classList.add('active');
@@ -285,6 +275,7 @@
             document.getElementById('login-error').style.display='none';
         }
 
+        // Fungsi updateMusyrifSelect
         function updateMusyrifSelect() {
             const asrama = document.getElementById('m-asrama').value;
             const musyrifSelect = document.getElementById('m-name');
@@ -395,11 +386,11 @@
             
             myChart = new Chart(ctx, {
                 type: 'bar',
-                 {
+                data: {
                     labels: days,
                     datasets: [{
                         label: 'Jumlah Absensi',
-                         chartData,
+                        data: chartData,
                         backgroundColor: ['rgba(46,125,50,0.8)','rgba(76,175,80,0.8)','rgba(139,195,74,0.8)','rgba(205,220,57,0.8)','rgba(255,193,7,0.8)','rgba(255,152,0,0.8)','rgba(244,67,54,0.8)'],
                         borderWidth: 2,
                         borderRadius: 8
@@ -447,11 +438,11 @@
             if(adminChart) adminChart.destroy();
             adminChart = new Chart(ctx2, {
                 type: 'bar',
-                 {
+                data: {
                     labels: names,
                     datasets: [{
                         label: 'Kehadiran Minggu Ini (%)',
-                         perfData,
+                        data: perfData,
                         backgroundColor: colors,
                         borderWidth: 2
                     }]
