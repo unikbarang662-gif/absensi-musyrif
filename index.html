@@ -379,6 +379,7 @@
 
     let role = null, user = null, data = [], myChart = null, adminChart = null, currentAsrama = null;
     
+    // === FUNGSI-FUNGSI ===
     function switchTab(t) {
       document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
       document.querySelector(`.tab-btn:nth-child(${t==='admin'?2:1})`).classList.add('active');
@@ -445,7 +446,13 @@
       
       loadData(); renderSched(); updJobs();
     }
-    function showError(m) { const e=document.getElementById('login-error'); e.textContent=m; e.style.display='block'; setTimeout(()=>e.style.display='none',3000); }
+    
+    function showError(m) { 
+      const e=document.getElementById('login-error'); 
+      e.textContent=m; 
+      e.style.display='block'; 
+      setTimeout(()=>e.style.display='none',3000); 
+    }
 
     function renderSched() {
       const now = new Date(), nm = now.getHours()*60+now.getMinutes(), day = now.getDay();
@@ -469,7 +476,9 @@
         const s = j.tf ? j.tf : j.t;
         const [sh,sm]=s.split(':').map(Number), [eh,em]=j.e.split(':').map(Number);
         const st=sh*60+sm, et=eh*60+em, ok = nm>=st && nm<=et;
-        const o = document.createElement('option'); o.value=j.n; o.textContent=`${j.n} (${s}-${j.e})`;
+        const o = document.createElement('option'); 
+        o.value=j.n; 
+        o.textContent=`${j.n} (${s}-${j.e})`;
         if(!ok) { o.disabled=true; o.textContent+=' (Di luar jadwal)'; } else { o.selected=true; act=true; }
         sel.appendChild(o);
       });
@@ -507,13 +516,14 @@
       my.forEach(d => { const date = new Date(d.Timestamp); chartData[date.getDay()]++; });
 
       if(myChart) myChart.destroy();
+      
       myChart = new Chart(ctx, {
         type: 'bar',
-         {
+        data: {
           labels: days,
           datasets: [{
             label: 'Jumlah Absensi',
-             chartData,
+            data: chartData,
             backgroundColor: ['rgba(46,125,50,0.8)','rgba(76,175,80,0.8)','rgba(139,195,74,0.8)','rgba(205,220,57,0.8)','rgba(255,193,7,0.8)','rgba(255,152,0,0.8)','rgba(244,67,54,0.8)'],
             borderWidth: 2,
             borderRadius: 8
@@ -534,7 +544,8 @@
       const set = (id,val) => { 
         document.getElementById(id).textContent=val+'%'; 
         const b=document.getElementById(id.replace('ms','mb')); 
-        b.style.width=val+'%'; b.className='fill'+(val<40?' crit':val<70?' low':'');
+        b.style.width=val+'%'; 
+        b.className='fill'+(val<40?' crit':val<70?' low':'');
       };
       set('ms-d',s.d); set('ms-w',s.w); set('ms-m',s.m);
       renderChart();
@@ -573,13 +584,14 @@
       });
 
       if(adminChart) adminChart.destroy();
+      
       adminChart = new Chart(ctx2, {
         type: 'bar',
-         {
+        data: {
           labels: names,
           datasets: [{
             label: 'Kehadiran Minggu Ini (%)',
-             perfData,
+            data: perfData,
             backgroundColor: colors,
             borderWidth: 2
           }]
