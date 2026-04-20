@@ -216,7 +216,9 @@
     <div class="modal" id="p-modal" onclick="this.classList.remove('active')"><img id="p-img"></div>
 
     <script>
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw4K-OSCqKE5GWK5ztyDbXu6WgJ7MvS1cnxZWctmPgSTIrGLT-BwiK5vPPBBx7wZabOHQ/exec";
+        // ================= KONFIGURASI =================
+        // ⚠️ GANTI URL INI DENGAN URL GOOGLE APPS SCRIPT ANDA
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxw54GCCIzsYVmlMw7Fz6XOvZZ0lpuhaA_hkhfKzu5DIb6rKozM-hMnKH4o5ZkP645Z/exec";
         const ADMIN_PIN = "1234";
         const WA_ADMIN = "6285893588373";
         
@@ -360,7 +362,7 @@
                     labels: days,
                     datasets: [{
                         label: 'Jumlah Absensi',
-                        data: chartData,
+                         chartData,
                         backgroundColor: ['rgba(46,125,50,0.8)','rgba(76,175,80,0.8)','rgba(139,195,74,0.8)','rgba(205,220,57,0.8)','rgba(255,193,7,0.8)','rgba(255,152,0,0.8)','rgba(244,67,54,0.8)'],
                         borderWidth: 2,
                         borderRadius: 8
@@ -417,7 +419,7 @@
                     labels: names,
                     datasets: [{
                         label: 'Kehadiran Minggu Ini (%)',
-                        data: perfData,
+                         perfData,
                         backgroundColor: colors,
                         borderWidth: 2
                     }]
@@ -440,10 +442,12 @@
             try {
                 const res = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'GET',
-                    mode: 'no-cors'
+                    mode: 'cors'
                 });
                 
-                data = [];
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                
+                data = await res.json();
                 
                 if (role === 'admin') { 
                     updAdminStats(); 
@@ -454,14 +458,7 @@
                 }
             } catch (e) {
                 console.error('Error:', e);
-                data = [];
-                if (role === 'admin') { 
-                    updAdminStats(); 
-                    renderAdminTable(); 
-                } else { 
-                    renderMyTable(); 
-                    showStats(); 
-                }
+                alert('❌ Gagal koneksi ke Google Script.\n\nPastikan:\n1. URL Google Script sudah benar\n2. Deploy sebagai Web App dengan akses "Anyone"\n3. Internet stabil');
             } finally {
                 if(btnRefresh) {
                     btnRefresh.disabled = false;
@@ -528,13 +525,19 @@
                 const res = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
                     body: JSON.stringify(payload),
-                    mode: 'no-cors'
+                    mode: 'cors'
                 });
                 
-                alert('✅ Absensi berhasil dikirim! Data tersimpan di Google Sheets.');
-                document.getElementById('absen-form').reset();
-                loadData();
-                if(role === 'musyrif') showStats();
+                const result = await res.json();
+                
+                if (result.result === 'success') {
+                    alert('✅ Absensi berhasil dikirim dan tersimpan di Google Sheets!');
+                    document.getElementById('absen-form').reset();
+                    loadData();
+                    if(role === 'musyrif') showStats();
+                } else {
+                    throw new Error(result.message || 'Gagal menyimpan data');
+                }
             } catch(err) {
                 console.error('Error:', err);
                 alert('❌ Gagal mengirim: ' + err.message);
@@ -548,20 +551,20 @@
             if(!confirm(`Hapus data ${nm}?`)) return;
             
             try {
-                const payload = {
-                    action: 'delete',
-                    timestamp: ts,
-                    musyrif: nm
-                };
-                
-                await fetch(GOOGLE_SCRIPT_URL, {
+                const res = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
-                    body: JSON.stringify(payload),
-                    mode: 'no-cors'
+                    body: JSON.stringify({action: 'delete', timestamp: ts, musyrif: nm}),
+                    mode: 'cors'
                 });
                 
-                alert('✅ Data berhasil dihapus');
-                loadData();
+                const result = await res.json();
+                
+                if (result.result === 'success') {
+                    alert('✅ Data berhasil dihapus');
+                    loadData();
+                } else {
+                    throw new Error(result.message);
+                }
             } catch (err) {
                 alert('❌ Gagal menghapus: ' + err.message);
             }
@@ -588,7 +591,17 @@
                 html += `<div class="asrama-section">
                     <h3>${asrama.name}</h3>
                     <table class="assessment-table">
-                        <thead><tr><th>No</th><th>Nama Musyrif</th><th>Kamar</th><th>Jumlah Absen</th><th>Persentase</th><th>Status</th><th>Penilaian</th></tr></thead>
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Nama Musyrif</th>
+                                <th>Kamar</th>
+                                <th>Jumlah Absen</th>
+                                <th>Persentase</th>
+                                <th>Status</th>
+                                <th>Penilaian</th>
+                            </tr>
+                        </thead>
                         <tbody>`;
                 
                 Object.keys(asrama.musyrif).forEach((name, mIdx) => {
@@ -597,7 +610,15 @@
                     const percentage = Math.min(100, Math.round((count/7)*100));
                     const assessment = getAssessment(percentage);
                     
-                    html += `<tr><td>${mIdx+1}</td><td><strong>${name}</strong></td><td>${asrama.musyrif[name].rooms.join(', ')}</td><td>${count} kali</td><td>${percentage}%</td><td><span style="background:${assessment.color};color:white;padding:3px 8px;border-radius:12px;">${assessment.status}</span></td><td><strong>Grade ${assessment.grade}</strong></td></tr>`;
+                    html += `<tr>
+                        <td>${mIdx+1}</td>
+                        <td><strong>${name}</strong></td>
+                        <td>${asrama.musyrif[name].rooms.join(', ')}</td>
+                        <td>${count} kali</td>
+                        <td>${percentage}%</td>
+                        <td><span style="background:${assessment.color};color:white;padding:3px 8px;border-radius:12px;font-size:0.85rem;">${assessment.status}</span></td>
+                        <td><strong>Grade ${assessment.grade}</strong></td>
+                    </tr>`;
                 });
                 
                 html += `</tbody></table></div>`;
@@ -611,7 +632,9 @@
                 html2canvas(document.getElementById('report-section'), { scale: 2, useCORS: true }).then(canvas => {
                     const imgData = canvas.toDataURL('image/png');
                     const pdf = new jsPDF('p', 'mm', 'a4');
-                    pdf.addImage(imgData, 'PNG', 0, 0, pdf.internal.pageSize.getWidth(), (canvas.height * pdf.internal.pageSize.getWidth()) / canvas.width);
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
                     pdf.save(`Laporan_Kinerja_Per_Asrama_${new Date().toISOString().slice(0,10)}.pdf`);
                     document.getElementById('report-section').style.display = 'none';
                     alert('✅ Laporan PDF berhasil diunduh!');
@@ -623,12 +646,12 @@
         }
         
         function generateIndividualPDF() {
-            const musyrifName = prompt('Masukkan nama musyrif:');
-            if (!musyrifName) return;
+            const musyrifName = prompt('Masukkan nama musyrif yang akan dicetak laporannya:');
+            if (!musyrifName || musyrifName.trim() === '') return;
             
             const musyrifData = data.filter(d => d['Nama Musyrif'] === musyrifName.trim());
             if (!musyrifData.length) {
-                alert('❌ Data tidak ditemukan!');
+                alert('❌ Data absensi untuk musyrif tersebut tidak ditemukan!');
                 return;
             }
             
@@ -636,7 +659,8 @@
             document.getElementById('ind-name').textContent = musyrifName;
             document.getElementById('ind-date').textContent = new Date().toLocaleString('id-ID');
             
-            let foundAsrama = '', foundRooms = '';
+            let foundAsrama = '';
+            let foundRooms = '';
             Object.keys(MUSYRIF_BY_ASMARA).forEach(key => {
                 if (MUSYRIF_BY_ASMARA[key].musyrif[musyrifName.trim()]) {
                     foundAsrama = MUSYRIF_BY_ASMARA[key].name;
@@ -645,28 +669,39 @@
             });
             
             document.getElementById('ind-asrama').textContent = foundAsrama || '-';
-            document.getElementById('ind-kamar').textContent = foundRooms || '-';
+            document.getElementById('ind-kamar').textContent = foundRooms || musyrifData[0].Kamar || '-';
             
             const stats = getStats(musyrifName.trim());
             const assessment = getAssessment(stats.w);
             
-            let html = `<h3>📊 Ringkasan Kehadiran</h3>
+            let html = `<div style="margin: 30px 0;">
+                <h3 style="color: var(--primary); margin-bottom: 15px;">📊 Ringkasan Kehadiran</h3>
                 <table class="assessment-table">
-                    <tr><th>Periode</th><th>Jumlah</th><th>Persentase</th></tr>
-                    <tr><td>Harian</td><td>${stats.raw.daily} kali</td><td>${stats.d}%</td></tr>
-                    <tr><td>Mingguan</td><td>${stats.raw.weekly} kali</td><td>${stats.w}%</td></tr>
-                    <tr><td>Bulanan</td><td>${stats.raw.monthly} kali</td><td>${stats.m}%</td></tr>
+                    <tr><th>Periode</th><th>Jumlah Absen</th><th>Persentase</th><th>Status</th></tr>
+                    <tr><td>Harian</td><td>${stats.raw.daily} kali</td><td>${stats.d}%</td><td>${stats.d >= 70 ? '✅' : '⚠️'}</td></tr>
+                    <tr><td>Mingguan</td><td>${stats.raw.weekly} kali</td><td>${stats.w}%</td><td><span style="background:${assessment.color};color:white;padding:3px 8px;border-radius:12px;">${assessment.status}</span></td></tr>
+                    <tr><td>Bulanan</td><td>${stats.raw.monthly} kali</td><td>${stats.m}%</td><td>${stats.m >= 70 ? '✅' : '⚠️'}</td></tr>
                 </table>
-                <h3>📜 Riwayat Absensi</h3>
+            </div>
+            
+            <div style="margin: 30px 0;">
+                <h3 style="color: var(--primary); margin-bottom: 15px;">📜 Riwayat Absensi</h3>
                 <table class="assessment-table">
-                    <thead><tr><th>No</th><th>Tanggal</th><th>Kegiatan</th></tr></thead>
+                    <thead><tr><th>No</th><th>Tanggal</th><th>Waktu</th><th>Kegiatan</th><th>Catatan</th></tr></thead>
                     <tbody>`;
             
             musyrifData.slice().reverse().forEach((d, idx) => {
                 const date = new Date(d.Timestamp);
-                html += `<tr><td>${idx+1}</td><td>${date.toLocaleDateString('id-ID')}</td><td>${d.Kegiatan}</td></tr>`;
+                html += `<tr>
+                    <td>${idx+1}</td>
+                    <td>${date.toLocaleDateString('id-ID')}</td>
+                    <td>${date.toLocaleTimeString('id-ID')}</td>
+                    <td>${d.Kegiatan}</td>
+                    <td>${d.Catatan || '-'}</td>
+                </tr>`;
             });
-            html += `</tbody></table>`;
+            
+            html += `</tbody></table></div>`;
             
             document.getElementById('individual-content').innerHTML = html;
             
@@ -675,12 +710,14 @@
                 html2canvas(document.getElementById('individual-report-section'), { scale: 2, useCORS: true }).then(canvas => {
                     const imgData = canvas.toDataURL('image/png');
                     const pdf = new jsPDF('p', 'mm', 'a4');
-                    pdf.addImage(imgData, 'PNG', 0, 0, pdf.internal.pageSize.getWidth(), (canvas.height * pdf.internal.pageSize.getWidth()) / canvas.width);
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
                     pdf.save(`Laporan_Individu_${musyrifName.trim().replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`);
                     document.getElementById('individual-report-section').style.display = 'none';
-                    alert('✅ Laporan PDF berhasil diunduh!');
+                    alert('✅ Laporan PDF Individu berhasil diunduh!');
                 }).catch(err => { 
-                    alert('❌ Gagal: ' + err.message); 
+                    alert('❌ Gagal generate PDF: ' + err.message); 
                     document.getElementById('individual-report-section').style.display = 'none'; 
                 });
             }, 1000);
