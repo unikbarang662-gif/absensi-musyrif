@@ -357,11 +357,11 @@
             if(myChart) myChart.destroy();
             myChart = new Chart(ctx, {
                 type: 'bar',
-                 {
+                data: {
                     labels: days,
                     datasets: [{
                         label: 'Jumlah Absensi',
-                         chartData,
+                        data: chartData,
                         backgroundColor: ['rgba(46,125,50,0.8)','rgba(76,175,80,0.8)','rgba(139,195,74,0.8)','rgba(205,220,57,0.8)','rgba(255,193,7,0.8)','rgba(255,152,0,0.8)','rgba(244,67,54,0.8)'],
                         borderWidth: 2,
                         borderRadius: 8
@@ -414,11 +414,11 @@
             if(adminChart) adminChart.destroy();
             adminChart = new Chart(ctx2, {
                 type: 'bar',
-                 {
+                data: {
                     labels: names,
                     datasets: [{
                         label: 'Kehadiran Minggu Ini (%)',
-                         perfData,
+                        data: perfData,
                         backgroundColor: colors,
                         borderWidth: 2
                     }]
@@ -431,7 +431,6 @@
             });
         }
 
-        // Load data dari localStorage dan Google Sheets
         async function loadData() {
             const btnRefresh = document.getElementById('btn-refresh');
             if(btnRefresh) {
@@ -439,7 +438,6 @@
                 btnRefresh.textContent = '⏳ Loading...';
             }
             
-            // Load dari localStorage terlebih dahulu
             try {
                 const storedData = localStorage.getItem(STORAGE_KEY);
                 if (storedData) {
@@ -456,13 +454,11 @@
                 console.error('Error loading from localStorage:', e);
             }
             
-            // Coba load dari Google Sheets
             try {
                 const res = await fetch(GOOGLE_SCRIPT_URL);
                 if (res.ok) {
                     const googleData = await res.json();
                     data = googleData;
-                    // Simpan ke localStorage
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
                     
                     if (role === 'admin') { 
@@ -474,7 +470,7 @@
                     }
                 }
             } catch (e) {
-                console.log('Using localStorage data (Google Sheets unavailable)');
+                console.log('Using localStorage data');
             } finally {
                 if(btnRefresh) {
                     btnRefresh.disabled = false;
@@ -540,11 +536,9 @@
                     Catatan: document.getElementById('notes').value
                 };
                 
-                // Simpan ke localStorage terlebih dahulu (agar langsung muncul)
                 data.push(newData);
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
                 
-                // Kirim ke Google Sheets
                 try {
                     await fetch(GOOGLE_SCRIPT_URL, {
                         method: 'POST',
@@ -572,11 +566,9 @@
             if(!confirm(`Hapus data ${nm}?`)) return;
             
             try {
-                // Hapus dari localStorage
                 data = data.filter(d => d.Timestamp !== ts);
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
                 
-                // Hapus dari Google Sheets
                 try {
                     await fetch(GOOGLE_SCRIPT_URL, {
                         method: 'POST',
