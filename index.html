@@ -33,19 +33,20 @@
         .card { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .card h2 { margin-bottom: 12px; color: var(--primary); font-size: 1.1rem; border-bottom: 2px solid var(--border); padding-bottom: 6px; }
         .admin-section { display: none; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 15px; }
-        .stat-card { background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; padding: 12px; border-radius: 10px; text-align: center; }
-        .stat-card h4 { font-size: 0.8rem; opacity: 0.9; }
-        .stat-card .val { font-size: 1.5rem; font-weight: bold; }
-        .stat-card.info { background: linear-gradient(135deg, var(--info), #42a5f5); }
-        .stat-card.warning { background: linear-gradient(135deg, var(--warning), #ff9800); }
-        .stat-card.danger { background: linear-gradient(135deg, var(--danger), #ef5350); }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px; }
+        .stat-card { color: white; padding: 15px; border-radius: 10px; text-align: center; }
+        .stat-card h4 { font-size: 0.85rem; opacity: 0.9; margin-bottom: 5px; }
+        .stat-card .val { font-size: 1.8rem; font-weight: bold; }
+        .stat-card.green { background: linear-gradient(135deg, #4caf50, #66bb6a); }
+        .stat-card.blue { background: linear-gradient(135deg, #2196f3, #42a5f5); }
+        .stat-card.orange { background: linear-gradient(135deg, #ff9800, #ffb74d); }
+        .stat-card.red { background: linear-gradient(135deg, #f44336, #ef5350); }
         .perf-list { display: grid; gap: 8px; }
-        .perf-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; background: #f9f9f9; border-radius: 8px; border-left: 4px solid var(--border); }
+        .perf-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f9f9f9; border-radius: 8px; border-left: 4px solid var(--border); }
         .perf-item.active { border-left-color: var(--success); background: #e8f5e9; }
         .perf-item.warning { border-left-color: var(--warning); background: #fff3e0; }
         .perf-item.inactive { border-left-color: var(--danger); background: #ffebee; }
-        .badge { padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; color: white; }
+        .badge { padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; color: white; }
         .badge.active { background: var(--success); } .badge.warning { background: var(--warning); } .badge.inactive { background: var(--danger); }
         .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
         .btn-group .btn { flex: 1; min-width: 100px; font-size: 0.9rem; padding: 10px; }
@@ -95,7 +96,7 @@
         .asrama-section { margin: 30px 0; padding: 20px; background: #f9f9f9; border-radius: 8px; }
         .asrama-section h3 { color: var(--primary); margin-bottom: 15px; border-bottom: 2px solid var(--primary); padding-bottom: 10px; }
         @media print { .no-print, #login-screen, header .logout-btn, .btn-group, .admin-section { display: none !important; } .report-section { display: block !important; } body { background: white; padding: 0; } .card { box-shadow: none; border: 1px solid #ddd; } }
-        @media (max-width: 600px) { .schedule-grid { grid-template-columns: 1fr; } .btn-group { flex-direction: column; } .stats-summary { grid-template-columns: 1fr; } .chart-container { height: 200px; } .grade-legend { grid-template-columns: repeat(2, 1fr); } .report-meta { grid-template-columns: 1fr; } }
+        @media (max-width: 600px) { .schedule-grid { grid-template-columns: 1fr; } .btn-group { flex-direction: column; } .stats-summary { grid-template-columns: 1fr; } .chart-container { height: 200px; } .grade-legend { grid-template-columns: repeat(2, 1fr); } .report-meta { grid-template-columns: 1fr; } .stats-grid { grid-template-columns: repeat(2, 1fr); } }
     </style>
 </head>
 <body>
@@ -153,10 +154,10 @@
                 </div>
             </div>
             <div class="stats-grid">
-                <div class="stat-card"><h4>Hari Ini</h4><div class="val" id="s-today">0</div></div>
-                <div class="stat-card info"><h4>Minggu Ini</h4><div class="val" id="s-week">0</div></div>
-                <div class="stat-card warning"><h4>Bulan Ini</h4><div class="val" id="s-month">0</div></div>
-                <div class="stat-card danger"><h4>Aktif</h4><div class="val" id="s-active">0/12</div></div>
+                <div class="stat-card green"><h4>Hari Ini</h4><div class="val" id="s-today">0</div></div>
+                <div class="stat-card blue"><h4>Minggu Ini</h4><div class="val" id="s-week">0</div></div>
+                <div class="stat-card orange"><h4>Bulan Ini</h4><div class="val" id="s-month">0</div></div>
+                <div class="stat-card red"><h4>Aktif</h4><div class="val" id="s-active">0/12</div></div>
             </div>
             <div class="card"><h2>📊 Performa Musyrif</h2><div class="perf-list" id="perf-container">Loading...</div></div>
             <div class="card"><h2>📈 Grafik Kinerja Detail</h2><div style="height: 300px;"><canvas id="adminChart"></canvas></div></div>
@@ -243,7 +244,6 @@
     <div class="modal" id="p-modal" onclick="this.classList.remove('active')"><img id="p-img"></div>
 
     <script>
-        // MODE TESTING - Menggunakan localStorage (TANPA GOOGLE SCRIPT)
         const ADMIN_PIN = "1234";
         const WA_ADMIN = "6285893588373";
         
@@ -345,7 +345,6 @@
             const sel = document.getElementById('act-select'), msg = document.getElementById('act-msg');
             sel.innerHTML = '<option value="">-- Pilih Kegiatan --</option>';
             
-            // MODE TESTING: Semua kegiatan tersedia tanpa batasan waktu
             JOBS.filter(j => j.days.includes(day)).forEach(j => {
                 const s = j.tf ? j.tf : j.t;
                 const o = document.createElement('option');
@@ -422,7 +421,9 @@
             Object.keys(MUSYRIF_BY_ASMARA).forEach(asramaKey => {
                 const asrama = MUSYRIF_BY_ASMARA[asramaKey];
                 Object.keys(asrama.musyrif).forEach(n => {
-                    const s = getStats(n); const w = s.w; const assessment = getAssessment(w);
+                    const s = getStats(n); 
+                    const w = s.w; 
+                    const assessment = getAssessment(w);
                     pc.innerHTML += `<div class="perf-item ${assessment.class}"><div><strong>${n}</strong><br><small>${asrama.name} - ${asrama.musyrif[n].rooms.join(', ')}</small></div><span class="badge ${assessment.class}">${assessment.status} (${w}%)</span></div>`;
                 });
             });
@@ -430,7 +431,10 @@
             const names=[], perfData=[], colors=[];
             Object.keys(MUSYRIF_BY_ASMARA).forEach(asramaKey => {
                 Object.keys(MUSYRIF_BY_ASMARA[asramaKey].musyrif).forEach(n => {
-                    names.push(n); const w = getStats(n).w; perfData.push(w); colors.push(getAssessment(w).color);
+                    names.push(n); 
+                    const w = getStats(n).w; 
+                    perfData.push(w); 
+                    colors.push(getAssessment(w).color);
                 });
             });
             if(adminChart) adminChart.destroy();
@@ -454,7 +458,6 @@
         }
 
         async function loadData() {
-            // MODE TESTING: Load dari localStorage
             const stored = localStorage.getItem('absensiData');
             data = stored ? JSON.parse(stored) : [];
             if (role === 'admin') { updAdminStats(); renderAdminTable(); }
@@ -510,11 +513,10 @@
                     Catatan: document.getElementById('notes').value
                 };
                 
-                // MODE TESTING: Simpan ke localStorage
                 data.push(newData);
                 localStorage.setItem('absensiData', JSON.stringify(data));
                 
-                alert('✅ Absensi berhasil dikirim! (Mode Testing - Data tersimpan di browser)');
+                alert('✅ Absensi berhasil dikirim!');
                 document.getElementById('absen-form').reset();
                 loadData();
                 if(role === 'musyrif') showStats();
@@ -608,32 +610,38 @@
         }
         
         function generateIndividualPDF() {
-            const musyrifName = prompt('Masukkan nama musyrif yang akan dicetak laporannya:');
+            const musyrifName = prompt('Masukkan nama musyrif yang akan dicetak laporannya:\n\nContoh: Ali Mashuri, Ali Zahid, Reva Dwi, Imam Syafi\'i');
             if (!musyrifName || musyrifName.trim() === '') return;
             
-            const musyrifData = data.filter(d => d['Nama Musyrif'] === musyrifName.trim());
+            const searchName = musyrifName.trim();
+            const musyrifData = data.filter(d => {
+                const dataName = (d['Nama Musyrif'] || '').trim();
+                return dataName === searchName;
+            });
+            
             if (!musyrifData.length) {
-                alert('❌ Data absensi untuk musyrif tersebut tidak ditemukan!');
+                let availableNames = [...new Set(data.map(d => d['Nama Musyrif']))].filter(n => n).join(', ');
+                alert(`❌ Data absensi untuk "${searchName}" tidak ditemukan!\n\nMusyrif yang tersedia:\n${availableNames || 'Belum ada data'}`);
                 return;
             }
             
             document.getElementById('individual-report-section').style.display = 'block';
-            document.getElementById('ind-name').textContent = musyrifName;
+            document.getElementById('ind-name').textContent = searchName;
             document.getElementById('ind-date').textContent = new Date().toLocaleString('id-ID');
             
             let foundAsrama = '';
             let foundRooms = '';
             Object.keys(MUSYRIF_BY_ASMARA).forEach(key => {
-                if (MUSYRIF_BY_ASMARA[key].musyrif[musyrifName.trim()]) {
+                if (MUSYRIF_BY_ASMARA[key].musyrif[searchName]) {
                     foundAsrama = MUSYRIF_BY_ASMARA[key].name;
-                    foundRooms = MUSYRIF_BY_ASMARA[key].musyrif[musyrifName.trim()].rooms.join(', ');
+                    foundRooms = MUSYRIF_BY_ASMARA[key].musyrif[searchName].rooms.join(', ');
                 }
             });
             
             document.getElementById('ind-asrama').textContent = foundAsrama || '-';
             document.getElementById('ind-kamar').textContent = foundRooms || musyrifData[0].Kamar || '-';
             
-            const stats = getStats(musyrifName.trim());
+            const stats = getStats(searchName);
             const assessment = getAssessment(stats.w);
             
             let html = `<div style="margin: 30px 0;">
@@ -675,7 +683,7 @@
                     const pdfWidth = pdf.internal.pageSize.getWidth();
                     const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
                     pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                    pdf.save(`Laporan_Individu_${musyrifName.trim().replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`);
+                    pdf.save(`Laporan_Individu_${searchName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`);
                     document.getElementById('individual-report-section').style.display = 'none';
                     alert('✅ Laporan PDF Individu berhasil diunduh!');
                 }).catch(err => { 
