@@ -22,10 +22,12 @@
         .form-group input, .form-group select { width: 100%; padding: 10px; border: 2px solid var(--border); border-radius: 8px; }
         .btn { width: 100%; padding: 11px; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; margin-bottom: 10px; transition: 0.2s; }
         .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-wa { background: #25D366; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-pdf { background: #d32f2f; color: white; }
         .error-msg { background: #ffebee; color: var(--danger); padding: 8px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 10px; display: none; text-align: center; }
+        .success-msg { background: #e8f5e9; color: var(--success); padding: 8px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 10px; display: none; text-align: center; }
         #main-app { display: none; max-width: 1200px; margin: 0 auto; animation: fadeIn 0.5s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         header { text-align: center; margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; border-radius: 12px; position: relative; }
@@ -95,6 +97,9 @@
         .grade-d { background: #ffcdd2; color: #c62828; }
         .asrama-section { margin: 30px 0; padding: 20px; background: #f9f9f9; border-radius: 8px; }
         .asrama-section h3 { color: var(--primary); margin-bottom: 15px; border-bottom: 2px solid var(--primary); padding-bottom: 10px; }
+        .loading { text-align: center; padding: 20px; color: var(--text-light); }
+        .loading::after { content: ''; display: inline-block; width: 20px; height: 20px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-left: 10px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
         @media print { .no-print, #login-screen, header .logout-btn, .btn-group, .admin-section { display: none !important; } .report-section { display: block !important; } body { background: white; padding: 0; } .card { box-shadow: none; border: 1px solid #ddd; } }
         @media (max-width: 600px) { .schedule-grid { grid-template-columns: 1fr; } .btn-group { flex-direction: column; } .stats-summary { grid-template-columns: 1fr; } .chart-container { height: 200px; } .grade-legend { grid-template-columns: repeat(2, 1fr); } .report-meta { grid-template-columns: 1fr; } .stats-grid { grid-template-columns: repeat(2, 1fr); } }
     </style>
@@ -108,6 +113,7 @@
                 <button class="tab-btn" onclick="switchTab('admin')">🛡️ Admin</button>
             </div>
             <div id="login-error" class="error-msg"></div>
+            <div id="login-success" class="success-msg"></div>
             <form id="musyrif-form">
                 <div class="form-group">
                     <label>Asrama</label>
@@ -147,7 +153,7 @@
             <div class="card">
                 <h2>⚙️ Pengaturan & Aksi</h2>
                 <div class="btn-group">
-                    <button class="btn btn-primary" onclick="loadData()">🔄 Refresh Data</button>
+                    <button class="btn btn-primary" onclick="loadData()" id="btn-refresh">🔄 Refresh Data</button>
                     <button class="btn btn-pdf" onclick="generatePDF()">📄 Laporan PDF Per Asrama</button>
                     <button class="btn btn-pdf" onclick="generateIndividualPDF()">📄 Laporan PDF Per Individu</button>
                     <button class="btn btn-wa" onclick="waReminder()">🔔 Cek & WA</button>
@@ -159,7 +165,7 @@
                 <div class="stat-card orange"><h4>Bulan Ini</h4><div class="val" id="s-month">0</div></div>
                 <div class="stat-card red"><h4>Aktif</h4><div class="val" id="s-active">0/12</div></div>
             </div>
-            <div class="card"><h2>📊 Performa Musyrif</h2><div class="perf-list" id="perf-container">Loading...</div></div>
+            <div class="card"><h2>📊 Performa Musyrif</h2><div class="perf-list" id="perf-container"><div class="loading">Loading</div></div></div>
             <div class="card"><h2>📈 Grafik Kinerja Detail</h2><div style="height: 300px;"><canvas id="adminChart"></canvas></div></div>
             <div class="card">
                 <h2>📜 Semua Data Absensi</h2>
@@ -186,7 +192,7 @@
             <div class="card">
                 <h2>📝 Input Absensi</h2>
                 <form id="absen-form">
-                    <div class="form-group"><label>Kegiatan</label><select id="act-select" required><option value="">-- Pilih Kegiatan --</option></select><small id="act-msg" style="color:var(--warning);font-weight:600;">⚠️ Mode Testing: Semua kegiatan tersedia</small></div>
+                    <div class="form-group"><label>Kegiatan</label><select id="act-select" required><option value="">-- Pilih Kegiatan --</option></select><small id="act-msg" style="color:var(--success);font-weight:600;">✅ Pilih kegiatan yang tersedia</small></div>
                     <div class="form-group"><label>Foto Kegiatan</label><input type="file" id="photo-in" accept="image/*" capture="user" required><small>📷 Gunakan kamera depan untuk foto bukti kegiatan</small></div>
                     <div class="form-group"><label>Catatan</label><textarea id="notes" rows="2"></textarea></div>
                     <button type="submit" class="btn btn-primary" id="sub-btn">✅ Kirim Absensi</button>
@@ -244,6 +250,9 @@
     <div class="modal" id="p-modal" onclick="this.classList.remove('active')"><img id="p-img"></div>
 
     <script>
+        // ================= KONFIGURASI =================
+        // ⚠️ PENTING: Ganti URL ini dengan URL Google Apps Script Anda
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz88DwnRIn5VC99k88MJg8Wq3lEZ4Dnqpd2tDJslniRi-cjHkl9RHML3kJ_jEKxkC8WtQ/exec";
         const ADMIN_PIN = "1234";
         const WA_ADMIN = "6285893588373";
         
@@ -254,14 +263,14 @@
         };
 
         const JOBS = [
-            { n: "Membangunkan Santri", t: "03:45", tf: "03:30", e: "04:15", days: [0,1,2,3,4,5,6] },
+            { n: "Membangunkan Santri", t: "03:45", tf: "03:30", e: "04:30", days: [0,1,2,3,4,5,6] },
             { n: "Pengajian Ba'da Subuh", t: "05:00", e: "05:45", days: [0,1,2,3,4,5,6] },
-            { n: "Menggobraki Berangkat Sekolah Formal", t: "06:30", e: "07:00", days: [0,1,2,3,4,5,6] },
+            { n: "Menggobraki Berangkat Sekolah Formal", t: "06:30", e: "07:30", days: [0,1,2,3,4,5,6] },
             { n: "Menggobraki Piket Kamar & Persiapan Maghrib", t: "16:30", e: "17:30", days: [0,1,2,3,4,5,6] },
             { n: "Mengobraki dan Mendampingi Dalail", t: "18:00", e: "19:30", days: [1] },
             { n: "Mengobraki dan Mendampingi Tawasulan", t: "21:00", e: "23:30", days: [4] },
             { n: "Pendampingan Jam Muthola'ah", t: "19:30", e: "20:30", days: [0,2,3,6] },
-            { n: "Menertibkan Jam Tidur", t: "21:30", e: "22:00", days: [0,1,2,3,4,5,6] }
+            { n: "Menertibkan Jam Tidur", t: "21:30", e: "22:30", days: [0,1,2,3,4,5,6] }
         ];
 
         let role = null, user = null, data = [], myChart = null, adminChart = null, currentAsrama = null;
@@ -272,6 +281,7 @@
             document.getElementById('musyrif-form').style.display = t==='admin'?'none':'block';
             document.getElementById('admin-form').style.display = t==='admin'?'block':'none';
             document.getElementById('login-error').style.display='none';
+            document.getElementById('login-success').style.display='none';
         }
 
         function updateMusyrifSelect() {
@@ -327,6 +337,7 @@
             loadData(); renderSched(); updJobs();
         }
         function showError(m) { const e=document.getElementById('login-error'); e.textContent=m; e.style.display='block'; setTimeout(()=>e.style.display='none',3000); }
+        function showSuccess(m) { const e=document.getElementById('login-success'); e.textContent=m; e.style.display='block'; setTimeout(()=>e.style.display='none',3000); }
 
         function renderSched() {
             const now = new Date(), nm = now.getHours()*60+now.getMinutes(), day = now.getDay();
@@ -354,8 +365,8 @@
                 sel.appendChild(o);
             });
             
-            msg.textContent = '⚠️ Mode Testing: Semua kegiatan tersedia';
-            msg.style.color = 'var(--warning)';
+            msg.textContent = '✅ Pilih kegiatan yang tersedia';
+            msg.style.color = 'var(--success)';
         }
 
         function getStats(nm) {
@@ -387,7 +398,7 @@
                     labels: days,
                     datasets: [{
                         label: 'Jumlah Absensi',
-                        data: chartData,
+                         chartData,
                         backgroundColor: ['rgba(46,125,50,0.8)','rgba(76,175,80,0.8)','rgba(139,195,74,0.8)','rgba(205,220,57,0.8)','rgba(255,193,7,0.8)','rgba(255,152,0,0.8)','rgba(244,67,54,0.8)'],
                         borderWidth: 2,
                         borderRadius: 8
@@ -444,7 +455,7 @@
                     labels: names,
                     datasets: [{
                         label: 'Kehadiran Minggu Ini (%)',
-                        data: perfData,
+                         perfData,
                         backgroundColor: colors,
                         borderWidth: 2
                     }]
@@ -458,10 +469,45 @@
         }
 
         async function loadData() {
-            const stored = localStorage.getItem('absensiData');
-            data = stored ? JSON.parse(stored) : [];
-            if (role === 'admin') { updAdminStats(); renderAdminTable(); }
-            else { renderMyTable(); showStats(); }
+            const btnRefresh = document.getElementById('btn-refresh');
+            if(btnRefresh) {
+                btnRefresh.disabled = true;
+                btnRefresh.textContent = '⏳ Loading...';
+            }
+            
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
+                
+                const res = await fetch(GOOGLE_SCRIPT_URL, { 
+                    method: 'GET',
+                    signal: controller.signal,
+                    mode: 'cors'
+                });
+                clearTimeout(timeoutId);
+                
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                
+                data = await res.json();
+                
+                if (role === 'admin') { 
+                    updAdminStats(); 
+                    renderAdminTable(); 
+                } else { 
+                    renderMyTable(); 
+                    showStats(); 
+                }
+                
+                showSuccess('✅ Data berhasil dimuat dari Google Sheets');
+            } catch (e) {
+                console.error('Error:', e);
+                alert('❌ Gagal koneksi ke Google Script.\n\nPastikan:\n1. URL Google Script sudah benar dan diakhiri /exec\n2. Deploy sebagai Web App dengan akses "Anyone"\n3. Internet stabil\n4. Google Script sudah di-deploy ulang');
+            } finally {
+                if(btnRefresh) {
+                    btnRefresh.disabled = false;
+                    btnRefresh.textContent = '🔄 Refresh Data';
+                }
+            }
         }
         
         function renderAdminTable() {
@@ -498,40 +544,74 @@
             if (!act) { alert('⚠️ Pilih kegiatan terlebih dahulu!'); return; }
             if (!photo) { alert('⚠️ Upload foto kegiatan menggunakan kamera depan!'); return; }
             
-            const btn = document.getElementById('sub-btn'); btn.disabled=true; btn.textContent='Mengirim...';
+            const btn = document.getElementById('sub-btn'); 
+            const originalText = btn.textContent;
+            btn.disabled=true; 
+            btn.textContent='⏳ Mengirim...';
             
             try {
-                const b64 = await new Promise((r,j)=>{const rd=new FileReader();rd.onload=()=>r(rd.result);rd.onerror=j;rd.readAsDataURL(photo);});
-                const newData = {
-                    Timestamp: new Date().toISOString(),
-                    'Nama Musyrif': user.name,
-                    Asrma: currentAsrama ? MUSYRIF_BY_ASMARA[currentAsrama].name : '',
+                const b64 = await new Promise((r,j)=>{
+                    const rd=new FileReader();
+                    rd.onload=()=>r(rd.result);
+                    rd.onerror=j;
+                    rd.readAsDataURL(photo);
+                });
+                
+                const payload = {
+                    musyrif: user.name,
                     asrama: currentAsrama ? MUSYRIF_BY_ASMARA[currentAsrama].name : '',
-                    Kamar: user.room,
-                    Kegiatan: act,
-                    Foto: b64,
-                    Catatan: document.getElementById('notes').value
+                    kamar: user.room,
+                    kegiatan: act,
+                    foto: b64,
+                    catatan: document.getElementById('notes').value
                 };
                 
-                data.push(newData);
-                localStorage.setItem('absensiData', JSON.stringify(data));
+                const res = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload),
+                    mode: 'cors'
+                });
                 
-                alert('✅ Absensi berhasil dikirim!');
-                document.getElementById('absen-form').reset();
-                loadData();
-                if(role === 'musyrif') showStats();
-            } catch(err) { 
-                alert('❌ Gagal: '+err.message); 
-            } finally { 
-                btn.disabled=false; btn.textContent='✅ Kirim Absensi'; 
+                const result = await res.json();
+                
+                if (result.result === 'success') {
+                    alert('✅ Absensi berhasil dikirim dan tersimpan di Google Sheets!');
+                    document.getElementById('absen-form').reset();
+                    loadData();
+                    if(role === 'musyrif') showStats();
+                } else {
+                    throw new Error(result.message || 'Gagal menyimpan data');
+                }
+            } catch(err) {
+                console.error('Error:', err);
+                alert('❌ Gagal mengirim data: ' + err.message + '\n\nPastikan Google Script sudah di-deploy dengan akses "Anyone"');
+            } finally {
+                btn.disabled=false; 
+                btn.textContent=originalText;
             }
         };
 
         async function delRow(ts, nm) {
             if(!confirm(`Hapus data ${nm}?\n${ts}`)) return;
-            data = data.filter(d => d.Timestamp !== ts);
-            localStorage.setItem('absensiData', JSON.stringify(data));
-            loadData();
+            
+            try {
+                const res = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({action: 'delete', timestamp: ts, musyrif: nm}),
+                    mode: 'cors'
+                });
+                
+                const result = await res.json();
+                
+                if (result.result === 'success') {
+                    alert('✅ Data berhasil dihapus');
+                    loadData();
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (err) {
+                alert('❌ Gagal menghapus data: ' + err.message);
+            }
         }
         
         function generatePDF() {
