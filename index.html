@@ -361,11 +361,11 @@
             if(myChart) myChart.destroy();
             myChart = new Chart(ctx, {
                 type: 'bar',
-                 {
+                data: {
                     labels: days,
                     datasets: [{
                         label: 'Jumlah Absensi',
-                         chartData,
+                        data: chartData,
                         backgroundColor: ['rgba(46,125,50,0.8)','rgba(76,175,80,0.8)','rgba(139,195,74,0.8)','rgba(205,220,57,0.8)','rgba(255,193,7,0.8)','rgba(255,152,0,0.8)','rgba(244,67,54,0.8)'],
                         borderWidth: 2,
                         borderRadius: 8
@@ -418,11 +418,11 @@
             if(adminChart) adminChart.destroy();
             adminChart = new Chart(ctx2, {
                 type: 'bar',
-                 {
+                data: {
                     labels: names,
                     datasets: [{
                         label: 'Kehadiran Minggu Ini (%)',
-                         perfData,
+                        data: perfData,
                         backgroundColor: colors,
                         borderWidth: 2
                     }]
@@ -435,7 +435,6 @@
             });
         }
 
-        // Load data dari localStorage DAN Google Sheets
         async function loadData() {
             const btnRefresh = document.getElementById('btn-refresh');
             if(btnRefresh) {
@@ -443,7 +442,6 @@
                 btnRefresh.textContent = '⏳ Loading...';
             }
             
-            // 1. Load dari localStorage terlebih dahulu (untuk tampilan cepat)
             try {
                 const storedData = localStorage.getItem(STORAGE_KEY);
                 if (storedData) {
@@ -460,7 +458,6 @@
                 console.error('Error loading from localStorage:', e);
             }
             
-            // 2. Load dari Google Sheets (sinkronisasi)
             try {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -477,10 +474,8 @@
                 const googleData = await res.json();
                 data = googleData;
                 
-                // Simpan ke localStorage untuk cache
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
                 
-                // Update tampilan
                 if (role === 'admin') { 
                     updAdminStats(); 
                     renderAdminTable(); 
@@ -492,7 +487,6 @@
                 showSuccess('✅ Data berhasil dimuat dari Google Sheets');
             } catch (e) {
                 console.error('Error loading from Google Sheets:', e);
-                // Gunakan data dari localStorage jika gagal
                 if (data.length === 0) {
                     const storedData = localStorage.getItem(STORAGE_KEY);
                     if (storedData) {
@@ -571,11 +565,9 @@
                     Catatan: document.getElementById('notes').value
                 };
                 
-                // 1. Simpan ke localStorage terlebih dahulu (agar langsung muncul)
                 data.push(newData);
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
                 
-                // Update tampilan langsung
                 if (role === 'admin') { 
                     updAdminStats(); 
                     renderAdminTable(); 
@@ -584,7 +576,6 @@
                     showStats(); 
                 }
                 
-                // 2. Kirim ke Google Sheets (background process)
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 10000);
                 
@@ -623,11 +614,9 @@
             if(!confirm(`Hapus data ${nm}?`)) return;
             
             try {
-                // Hapus dari localStorage
                 data = data.filter(d => d.Timestamp !== ts);
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
                 
-                // Hapus dari Google Sheets
                 try {
                     const payload = {
                         action: 'delete',
