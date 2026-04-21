@@ -27,6 +27,7 @@
         .btn-wa { background: #25D366; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-pdf { background: #d32f2f; color: white; }
         .error-msg { background: #ffebee; color: var(--danger); padding: 8px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 10px; display: none; text-align: center; }
+        .success-msg { background: #e8f5e9; color: var(--success); padding: 8px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 10px; display: none; text-align: center; }
         #main-app { display: none; max-width: 1200px; margin: 0 auto; animation: fadeIn 0.5s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         header { text-align: center; margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; border-radius: 12px; position: relative; }
@@ -96,6 +97,7 @@
                 <button class="tab-btn" onclick="switchTab('admin')">🛡️ Admin</button>
             </div>
             <div id="login-error" class="error-msg"></div>
+            <div id="login-success" class="success-msg"></div>
             <form id="musyrif-form">
                 <div class="form-group">
                     <label>Asrama</label>
@@ -216,10 +218,10 @@
     <div class="modal" id="p-modal" onclick="this.classList.remove('active')"><img id="p-img"></div>
 
     <script>
-        // URL Google Script sudah dimasukkan otomatis
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxIgw3SPRwZkl8tet6m_pSOJ-Czm1iSQQ8dEo30x0WaJmJu3pRzp8fvhB7q88l2svOC/exec";
         const ADMIN_PIN = "1234";
         const WA_ADMIN = "6285893588373";
+        const STORAGE_KEY = 'absensi_musyrif_data';
         
         const MUSYRIF_BY_ASMARA = {
             "al-hakim": { name: "Asrama Al Hakim", musyrif: { "Ali Mashuri": { pass: "ali123", rooms: ["Khondak", "Uhud"] }, "Ali Zahid": { pass: "zahid123", rooms: ["Badar"] }, "Reva Dwi": { pass: "reva123", rooms: ["Khoibar"] }, "Imam Syafi'i": { pass: "imam123", rooms: ["Multazam"] } } },
@@ -246,6 +248,7 @@
             document.getElementById('musyrif-form').style.display = t==='admin'?'none':'block';
             document.getElementById('admin-form').style.display = t==='admin'?'block':'none';
             document.getElementById('login-error').style.display='none';
+            document.getElementById('login-success').style.display='none';
         }
 
         function updateMusyrifSelect() {
@@ -301,6 +304,7 @@
             loadData(); renderSched(); updJobs();
         }
         function showError(m) { const e=document.getElementById('login-error'); e.textContent=m; e.style.display='block'; setTimeout(()=>e.style.display='none',3000); }
+        function showSuccess(m) { const e=document.getElementById('login-success'); e.textContent=m; e.style.display='block'; setTimeout(()=>e.style.display='none',3000); }
 
         function renderSched() {
             const now = new Date(), nm = now.getHours()*60+now.getMinutes(), day = now.getDay();
@@ -357,11 +361,11 @@
             if(myChart) myChart.destroy();
             myChart = new Chart(ctx, {
                 type: 'bar',
-                data: {
+                 {
                     labels: days,
                     datasets: [{
                         label: 'Jumlah Absensi',
-                        data: chartData,
+                         chartData,
                         backgroundColor: ['rgba(46,125,50,0.8)','rgba(76,175,80,0.8)','rgba(139,195,74,0.8)','rgba(205,220,57,0.8)','rgba(255,193,7,0.8)','rgba(255,152,0,0.8)','rgba(244,67,54,0.8)'],
                         borderWidth: 2,
                         borderRadius: 8
@@ -414,11 +418,11 @@
             if(adminChart) adminChart.destroy();
             adminChart = new Chart(ctx2, {
                 type: 'bar',
-                data: {
+                 {
                     labels: names,
                     datasets: [{
                         label: 'Kehadiran Minggu Ini (%)',
-                        data: perfData,
+                         perfData,
                         backgroundColor: colors,
                         borderWidth: 2
                     }]
@@ -431,6 +435,7 @@
             });
         }
 
+        // Load data dari Google Sheets DAN localStorage
         async function loadData() {
             const btnRefresh = document.getElementById('btn-refresh');
             if(btnRefresh) {
@@ -438,16 +443,44 @@
                 btnRefresh.textContent = '⏳ Loading...';
             }
             
+            // 1. Load dari localStorage terlebih dahulu (untuk tampilan cepat)
             try {
+                const storedData = localStorage.getItem(STORAGE_KEY);
+                if (storedData) {
+                    data = JSON.parse(storedData);
+                    if (role === 'admin') { 
+                        updAdminStats(); 
+                        renderAdminTable(); 
+                    } else { 
+                        renderMyTable(); 
+                        showStats(); 
+                    }
+                }
+            } catch (e) {
+                console.error('Error loading from localStorage:', e);
+            }
+            
+            // 2. Load dari Google Sheets
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
+                
                 const res = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'GET',
-                    mode: 'no-cors'
+                    signal: controller.signal
                 });
                 
-                // Karena mode no-cors, kita tidak bisa membaca response
-                // Jadi kita asumsikan berhasil dan load data kosong dulu
-                data = [];
+                clearTimeout(timeoutId);
                 
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                
+                const googleData = await res.json();
+                data = googleData;
+                
+                // Simpan ke localStorage untuk cache
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                
+                // Update tampilan
                 if (role === 'admin') { 
                     updAdminStats(); 
                     renderAdminTable(); 
@@ -455,15 +488,23 @@
                     renderMyTable(); 
                     showStats(); 
                 }
+                
+                showSuccess('✅ Data berhasil dimuat dari Google Sheets');
             } catch (e) {
-                console.error('Error:', e);
-                data = [];
-                if (role === 'admin') { 
-                    updAdminStats(); 
-                    renderAdminTable(); 
-                } else { 
-                    renderMyTable(); 
-                    showStats(); 
+                console.error('Error loading from Google Sheets:', e);
+                // Gunakan data dari localStorage jika gagal
+                if (data.length === 0) {
+                    const storedData = localStorage.getItem(STORAGE_KEY);
+                    if (storedData) {
+                        data = JSON.parse(storedData);
+                        if (role === 'admin') { 
+                            updAdminStats(); 
+                            renderAdminTable(); 
+                        } else { 
+                            renderMyTable(); 
+                            showStats(); 
+                        }
+                    }
                 }
             } finally {
                 if(btnRefresh) {
@@ -519,30 +560,57 @@
                     rd.readAsDataURL(photo);
                 });
                 
-                const payload = {
-                    musyrif: user.name,
+                const newData = {
+                    Timestamp: new Date().toISOString(),
+                    'Nama Musyrif': user.name,
+                    Asrma: currentAsrama ? MUSYRIF_BY_ASMARA[currentAsrama].name : '',
                     asrama: currentAsrama ? MUSYRIF_BY_ASMARA[currentAsrama].name : '',
-                    kamar: user.room,
-                    kegiatan: act,
-                    foto: b64,
-                    catatan: document.getElementById('notes').value
+                    Kamar: user.room,
+                    Kegiatan: act,
+                    Foto: b64,
+                    Catatan: document.getElementById('notes').value
                 };
+                
+                // 1. Simpan ke localStorage terlebih dahulu (agar langsung muncul)
+                data.push(newData);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                
+                // Update tampilan langsung
+                if (role === 'admin') { 
+                    updAdminStats(); 
+                    renderAdminTable(); 
+                } else { 
+                    renderMyTable(); 
+                    showStats(); 
+                }
+                
+                // 2. Kirim ke Google Sheets
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
                 
                 const res = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
-                    body: JSON.stringify(payload),
-                    mode: 'no-cors'
+                    body: JSON.stringify(newData),
+                    signal: controller.signal
                 });
                 
-                // Karena mode no-cors, kita tidak bisa membaca response
-                // Tapi kita asumsikan berhasil
-                alert('✅ Absensi berhasil dikirim! Data tersimpan di Google Sheets.');
-                document.getElementById('absen-form').reset();
-                loadData();
-                if(role === 'musyrif') showStats();
+                clearTimeout(timeoutId);
+                
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                
+                const result = await res.json();
+                
+                if (result.result === 'success') {
+                    alert('✅ Absensi berhasil dikirim dan tersimpan di Google Sheets!');
+                    document.getElementById('absen-form').reset();
+                    // Reload data dari Google Sheets untuk sinkronisasi
+                    loadData();
+                } else {
+                    throw new Error(result.message || 'Gagal menyimpan data');
+                }
             } catch(err) {
                 console.error('Error:', err);
-                alert('❌ Gagal mengirim: ' + err.message);
+                alert('❌ Gagal mengirim: ' + err.message + '\n\nData tersimpan di browser (localStorage). Silakan coba lagi nanti.');
             } finally {
                 btn.disabled=false; 
                 btn.textContent='✅ Kirim Absensi';
@@ -559,14 +627,19 @@
                     musyrif: nm
                 };
                 
-                await fetch(GOOGLE_SCRIPT_URL, {
+                const res = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
-                    body: JSON.stringify(payload),
-                    mode: 'no-cors'
+                    body: JSON.stringify(payload)
                 });
                 
-                alert('✅ Data berhasil dihapus');
-                loadData();
+                const result = await res.json();
+                
+                if (result.result === 'success') {
+                    alert('✅ Data berhasil dihapus');
+                    loadData();
+                } else {
+                    throw new Error(result.message);
+                }
             } catch (err) {
                 alert('❌ Gagal menghapus: ' + err.message);
             }
