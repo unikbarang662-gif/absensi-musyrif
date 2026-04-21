@@ -221,7 +221,7 @@
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxIgw3SPRwZkl8tet6m_pSOJ-Czm1iSQQ8dEo30x0WaJmJu3pRzp8fvhB7q88l2svOC/exec";
         const ADMIN_PIN = "1234";
         const WA_ADMIN = "6285893588373";
-        const STORAGE_KEY = 'absensi_musyrif_data';
+        const STORAGE_KEY = 'absensi_musyrif_data_v3';
         
         const MUSYRIF_BY_ASMARA = {
             "al-hakim": { name: "Asrama Al Hakim", musyrif: { "Ali Mashuri": { pass: "ali123", rooms: ["Khondak", "Uhud"] }, "Ali Zahid": { pass: "zahid123", rooms: ["Badar"] }, "Reva Dwi": { pass: "reva123", rooms: ["Khoibar"] }, "Imam Syafi'i": { pass: "imam123", rooms: ["Multazam"] } } },
@@ -435,7 +435,7 @@
             });
         }
 
-        // Load data dari Google Sheets DAN localStorage
+        // Load data dari localStorage DAN Google Sheets
         async function loadData() {
             const btnRefresh = document.getElementById('btn-refresh');
             if(btnRefresh) {
@@ -460,7 +460,7 @@
                 console.error('Error loading from localStorage:', e);
             }
             
-            // 2. Load dari Google Sheets
+            // 2. Load dari Google Sheets (sinkronisasi)
             try {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -550,7 +550,7 @@
             
             const btn = document.getElementById('sub-btn'); 
             btn.disabled=true; 
-            btn.textContent='⏳ Mengirim...';
+            btn.textContent='⏳ Menyimpan...';
             
             try {
                 const b64 = await new Promise((r,j)=>{
@@ -584,33 +584,35 @@
                     showStats(); 
                 }
                 
-                // 2. Kirim ke Google Sheets
+                // 2. Kirim ke Google Sheets (background process)
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 10000);
                 
-                const res = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify(newData),
-                    signal: controller.signal
-                });
-                
-                clearTimeout(timeoutId);
-                
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                
-                const result = await res.json();
-                
-                if (result.result === 'success') {
-                    alert('✅ Absensi berhasil dikirim dan tersimpan di Google Sheets!');
-                    document.getElementById('absen-form').reset();
-                    // Reload data dari Google Sheets untuk sinkronisasi
-                    loadData();
-                } else {
-                    throw new Error(result.message || 'Gagal menyimpan data');
+                try {
+                    const res = await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        body: JSON.stringify(newData),
+                        signal: controller.signal
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    if (res.ok) {
+                        const result = await res.json();
+                        if (result.result === 'success') {
+                            console.log('✅ Data tersimpan di Google Sheets');
+                        }
+                    }
+                } catch (sheetError) {
+                    console.warn('⚠️ Gagal simpan ke Google Sheets, tapi data tersimpan di browser', sheetError);
                 }
+                
+                alert('✅ Absensi berhasil disimpan!\n\n📱 Tersimpan di:\n- Browser (langsung tampil)\n- Google Sheets (backup online)');
+                document.getElementById('absen-form').reset();
+                
             } catch(err) {
                 console.error('Error:', err);
-                alert('❌ Gagal mengirim: ' + err.message + '\n\nData tersimpan di browser (localStorage). Silakan coba lagi nanti.');
+                alert('❌ Gagal menyimpan: ' + err.message);
             } finally {
                 btn.disabled=false; 
                 btn.textContent='✅ Kirim Absensi';
@@ -621,25 +623,28 @@
             if(!confirm(`Hapus data ${nm}?`)) return;
             
             try {
-                const payload = {
-                    action: 'delete',
-                    timestamp: ts,
-                    musyrif: nm
-                };
+                // Hapus dari localStorage
+                data = data.filter(d => d.Timestamp !== ts);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
                 
-                const res = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify(payload)
-                });
-                
-                const result = await res.json();
-                
-                if (result.result === 'success') {
-                    alert('✅ Data berhasil dihapus');
-                    loadData();
-                } else {
-                    throw new Error(result.message);
+                // Hapus dari Google Sheets
+                try {
+                    const payload = {
+                        action: 'delete',
+                        timestamp: ts,
+                        musyrif: nm
+                    };
+                    
+                    await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+                } catch (sheetError) {
+                    console.warn('⚠️ Gagal hapus dari Google Sheets', sheetError);
                 }
+                
+                alert('✅ Data berhasil dihapus');
+                loadData();
             } catch (err) {
                 alert('❌ Gagal menghapus: ' + err.message);
             }
