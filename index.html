@@ -176,7 +176,7 @@
                 <h2>📝 Input Absensi</h2>
                 <form id="absen-form">
                     <div class="form-group"><label>Kegiatan</label><select id="act-select" required><option value="">-- Pilih Kegiatan --</option></select><small id="act-msg">Menunggu jadwal...</small></div>
-                    <div class="form-group"><label>Foto Kegiatan</label><input type="file" id="photo-in" accept="image/*" capture="user" required><small>📷 Gunakan kamera depan</small></div>
+                    <div class="form-group"><label>Foto Kegiatan</label><input type="file" id="photo-in" accept="image/*" capture="user" required><small>📷 Gunakan kamera depan (foto akan dikompres)</small></div>
                     <div class="form-group"><label>Catatan</label><textarea id="notes" rows="2" style="width:100%;padding:10px;border:2px solid var(--border);border-radius:8px;"></textarea></div>
                     <button type="submit" class="btn btn-primary" id="sub-btn">✅ Kirim Absensi</button>
                 </form>
@@ -221,26 +221,102 @@
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxIgw3SPRwZkl8tet6m_pSOJ-Czm1iSQQ8dEo30x0WaJmJu3pRzp8fvhB7q88l2svOC/exec";
         const ADMIN_PIN = "1234";
         const WA_ADMIN = "6285893588373";
-        const STORAGE_KEY = 'absensi_meta_v3'; // Hanya simpan metadata, bukan foto
         
-        const MUSYRIF_BY_ASMARA = {
-            "al-hakim": { name: "Asrama Al Hakim", musyrif: { "Ali Mashuri": { pass: "ali123", rooms: ["Khondak", "Uhud"] }, "Ali Zahid": { pass: "zahid123", rooms: ["Badar"] }, "Reva Dwi": { pass: "reva123", rooms: ["Khoibar"] }, "Imam Syafi'i": { pass: "imam123", rooms: ["Multazam"] } } },
-            "al-fattah": { name: "Asrama Al Fattah", musyrif: { "Fattahilah": { pass: "fattah123", rooms: ["Quba", "Mekkah", "Madinah", "Raudhoh"] }, "Brian Adi Waskito": { pass: "brian123", rooms: ["Bir'Ali", "Zam-zam", "Tan'im", "Thoif"] }, "Babil Yasar": { pass: "babil123", rooms: ["Mina", "Hudaibiyah", "Jeddah", "Ji'ronah"] }, "Fahmi": { pass: "fahmi123", rooms: ["Arofah"] }, "Wawan Febi": { pass: "wawan123", rooms: ["RBQ"] } } },
-            "al-karim": { name: "Asrama Al Karim", musyrif: { "Bima Julian": { pass: "bima123", rooms: ["101", "102", "103"] }, "Irfan Khoirul Aziz": { pass: "irfan123", rooms: ["104", "201", "202"] }, "Rizki Alfian": { pass: "rizki123", rooms: ["203", "204"] } } }
-        };
-
-        const JOBS = [
-            { n: "Membangunkan Santri", t: "03:45", tf: "03:30", e: "04:15", days: [0,1,2,3,4,5,6] },
-            { n: "Pengajian Ba'da Subuh", t: "05:00", e: "05:45", days: [0,1,2,3,4,5,6] },
-            { n: "Menggobraki Berangkat Sekolah Formal", t: "06:30", e: "07:00", days: [0,1,2,3,4,5,6] },
-            { n: "Menggobraki Piket Kamar & Persiapan Maghrib", t: "16:30", e: "17:30", days: [0,1,2,3,4,5,6] },
-            { n: "Mengobraki dan Mendampingi Dalail", t: "18:00", e: "19:30", days: [1] },
-            { n: "Mengobraki dan Mendampingi Tawasulan", t: "21:00", e: "23:30", days: [4] },
-            { n: "Pendampingan Jam Muthola'ah", t: "19:30", e: "20:30", days: [0,2,3,6] },
-            { n: "Menertibkan Jam Tidur", t: "21:30", e: "22:00", days: [0,1,2,3,4,5,6] }
-        ];
-
+        // IndexedDB untuk penyimpanan yang lebih besar
+        const DB_NAME = 'AbsensiMusyrifDB';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'absensi';
+        
+        let db;
         let role = null, user = null, data = [], myChart = null, adminChart = null, currentAsrama = null;
+        
+        // Inisialisasi IndexedDB
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => {
+                    db = request.result;
+                    resolve(db);
+                };
+                
+                request.onupgradeneeded = (event) => {
+                    const database = event.target.result;
+                    if (!database.objectStoreNames.contains(STORE_NAME)) {
+                        database.createObjectStore(STORE_NAME, { keyPath: 'Timestamp' });
+                    }
+                };
+            });
+        }
+        
+        // Simpan ke IndexedDB
+        function saveToIndexedDB(dataItem) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.put(dataItem);
+                
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        }
+        
+        // Ambil semua dari IndexedDB
+        function getAllFromIndexedDB() {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.getAll();
+                
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+        
+        // Hapus dari IndexedDB
+        function deleteFromIndexedDB(timestamp) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.delete(timestamp);
+                
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        }
+        
+        // Kompres gambar
+        function compressImage(file, maxWidth = 800, quality = 0.7) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        
+                        if (width > maxWidth) {
+                            height = (height * maxWidth) / width;
+                            width = maxWidth;
+                        }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+                        resolve(compressedDataUrl);
+                    };
+                    img.onerror = reject;
+                };
+                reader.onerror = reject;
+            });
+        }
         
         function switchTab(t) {
             document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -443,6 +519,7 @@
             }
             
             try {
+                // Load dari Google Sheets
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 15000);
                 
@@ -468,15 +545,28 @@
                 showSuccess('✅ Data berhasil dimuat dari Google Sheets');
             } catch (e) {
                 console.error('Error loading from Google Sheets:', e);
-                data = [];
-                if (role === 'admin') { 
-                    updAdminStats(); 
-                    renderAdminTable(); 
-                } else { 
-                    renderMyTable(); 
-                    showStats(); 
+                // Fallback ke IndexedDB
+                try {
+                    data = await getAllFromIndexedDB();
+                    if (role === 'admin') { 
+                        updAdminStats(); 
+                        renderAdminTable(); 
+                    } else { 
+                        renderMyTable(); 
+                        showStats(); 
+                    }
+                    alert('⚠️ Menampilkan data dari cache (offline)');
+                } catch (dbError) {
+                    data = [];
+                    if (role === 'admin') { 
+                        updAdminStats(); 
+                        renderAdminTable(); 
+                    } else { 
+                        renderMyTable(); 
+                        showStats(); 
+                    }
+                    alert('⚠️ Tidak bisa mengambil data. Periksa koneksi internet.');
                 }
-                alert('⚠️ Tidak bisa mengambil data dari Google Sheets. Periksa koneksi internet.');
             } finally {
                 if(btnRefresh) {
                     btnRefresh.disabled = false;
@@ -521,15 +611,11 @@
             
             const btn = document.getElementById('sub-btn'); 
             btn.disabled=true; 
-            btn.textContent='⏳ Mengirim...';
+            btn.textContent='⏳ Mengompres & Mengirim...';
             
             try {
-                const b64 = await new Promise((r,j)=>{
-                    const rd=new FileReader();
-                    rd.onload=()=>r(rd.result);
-                    rd.onerror=j;
-                    rd.readAsDataURL(photo);
-                });
+                // Kompres foto terlebih dahulu
+                const compressedPhoto = await compressImage(photo, 800, 0.7);
                 
                 const newData = {
                     Timestamp: new Date().toISOString(),
@@ -538,9 +624,16 @@
                     asrama: currentAsrama ? MUSYRIF_BY_ASMARA[currentAsrama].name : '',
                     Kamar: user.room,
                     Kegiatan: act,
-                    Foto: b64,
+                    Foto: compressedPhoto,
                     Catatan: document.getElementById('notes').value
                 };
+                
+                // Simpan ke IndexedDB (backup lokal)
+                try {
+                    await saveToIndexedDB(newData);
+                } catch (dbError) {
+                    console.warn('Gagal simpan ke IndexedDB:', dbError);
+                }
                 
                 // Kirim ke Google Sheets
                 const controller = new AbortController();
@@ -559,7 +652,7 @@
                 const result = await res.json();
                 
                 if (result.result === 'success') {
-                    alert('✅ Absensi berhasil dikirim dan tersimpan di Google Sheets!');
+                    alert('✅ Absensi berhasil dikirim!\n\n📸 Foto tersimpan sebagai bukti:\n- Google Sheets (online)\n- Browser ( IndexedDB)');
                     document.getElementById('absen-form').reset();
                     loadData();
                     if(role === 'musyrif') showStats();
@@ -568,7 +661,7 @@
                 }
             } catch(err) {
                 console.error('Error:', err);
-                alert('❌ Gagal mengirim: ' + err.message + '\n\nPastikan:\n1. Koneksi internet stabil\n2. Google Script sudah di-deploy dengan akses "Anyone"');
+                alert('❌ Gagal mengirim: ' + err.message + '\n\nPastikan:\n1. Koneksi internet stabil\n2. Google Script sudah di-deploy dengan akses "Anyone"\n3. Ukuran foto tidak terlalu besar');
             } finally {
                 btn.disabled=false; 
                 btn.textContent='✅ Kirim Absensi';
@@ -579,6 +672,7 @@
             if(!confirm(`Hapus data ${nm}?`)) return;
             
             try {
+                // Hapus dari Google Sheets
                 const payload = {
                     action: 'delete',
                     timestamp: ts,
@@ -593,6 +687,13 @@
                 const result = await res.json();
                 
                 if (result.result === 'success') {
+                    // Hapus dari IndexedDB
+                    try {
+                        await deleteFromIndexedDB(ts);
+                    } catch (dbError) {
+                        console.warn('Gagal hapus dari IndexedDB:', dbError);
+                    }
+                    
                     alert('✅ Data berhasil dihapus');
                     loadData();
                 } else {
@@ -750,6 +851,16 @@
             if(!miss.length) return alert('✅ Semua sudah absen!');
             window.open(`https://wa.me/?text=${encodeURIComponent(`*REMINDER ABSENSI*\nYth. ${miss.join(', ')},\nAnda belum absen hari ini.`)}`);
         }
+
+        // Inisialisasi IndexedDB saat aplikasi dimuat
+        window.addEventListener('load', async () => {
+            try {
+                await initDB();
+                console.log('✅ IndexedDB siap digunakan');
+            } catch (err) {
+                console.error('❌ Gagal inisialisasi IndexedDB:', err);
+            }
+        });
 
         setInterval(()=>{if(role){renderSched();updJobs();}}, 60000);
     </script>
