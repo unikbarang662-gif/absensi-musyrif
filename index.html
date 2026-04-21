@@ -4,25 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Absensi Musyrif - Laporan PDF</title>
-    <!-- Library External -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
-        /* CSS Reset & Variables */
         :root { --primary:#2e7d32; --light:#4caf50; --bg:#f5f7f5; --card:#fff; --text:#333; --border:#ddd; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background: var(--bg); color: var(--text); padding: 16px; }
-        
-        /* Login Screen */
         #login-screen { position: fixed; inset: 0; background: linear-gradient(135deg, var(--primary), var(--light)); z-index: 9999; display: flex; align-items: center; justify-content: center; }
         .box { background: white; padding: 25px; border-radius: 16px; width: 90%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .tabs { display: flex; margin-bottom: 20px; border-bottom: 2px solid var(--border); }
         .tab-btn { flex: 1; padding: 10px; border: none; background: none; font-weight: bold; cursor: pointer; color: #888; }
         .tab-btn.active { color: var(--primary); border-bottom: 3px solid var(--primary); }
-        
-        /* Forms */
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: 500; }
         input, select, textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; }
@@ -30,27 +24,19 @@
         .btn-primary { background: var(--primary); color: white; }
         .btn-wa { background: #25D366; color: white; margin-top: 10px; }
         .btn-danger { background: #d32f2f; color: white; padding: 5px 10px; font-size: 0.8rem; width: auto; }
-        
-        /* Main App */
         #main-app { display: none; max-width: 1000px; margin: 0 auto; }
         header { background: var(--primary); color: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: center; position: relative; }
         .logout { position: absolute; right: 10px; top: 10px; background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer; width: auto; }
-        
-        /* Cards & Grid */
         .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         h2 { margin-bottom: 15px; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 10px; }
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
         @media(min-width: 600px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
         .stat-card { background: var(--primary); color: white; padding: 10px; border-radius: 8px; text-align: center; }
         .stat-val { font-size: 1.5rem; font-weight: bold; }
-        
-        /* Tables */
         table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
         th, td { padding: 8px; text-align: left; border-bottom: 1px solid var(--border); }
         th { background: #f9f9f9; }
         .thumb { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; cursor: pointer; }
-        
-        /* Utilities */
         .hidden { display: none; }
         .error-msg { color: red; text-align: center; margin-bottom: 10px; display: none; }
         .success-msg { color: green; text-align: center; margin-bottom: 10px; display: none; }
@@ -58,7 +44,6 @@
 </head>
 <body>
 
-    <!-- LOGIN SCREEN -->
     <div id="login-screen">
         <div class="box">
             <h2 style="text-align:center; border:none;">📋 Absensi Musyrif</h2>
@@ -66,11 +51,8 @@
                 <button class="tab-btn active" onclick="switchTab('musyrif')">Musyrif</button>
                 <button class="tab-btn" onclick="switchTab('admin')">Admin</button>
             </div>
-            
             <div id="msg-error" class="error-msg"></div>
             <div id="msg-success" class="success-msg"></div>
-
-            <!-- Form Musyrif -->
             <form id="form-musyrif">
                 <div class="form-group">
                     <label>Asrama</label>
@@ -92,8 +74,6 @@
                 <button type="submit" class="btn-primary">Masuk Musyrif</button>
                 <button type="button" class="btn-wa" onclick="lupaPass()">Lupa Password (WA)</button>
             </form>
-
-            <!-- Form Admin -->
             <form id="form-admin" class="hidden">
                 <div class="form-group">
                     <label>PIN Admin</label>
@@ -104,7 +84,6 @@
         </div>
     </div>
 
-    <!-- MAIN APP -->
     <div id="main-app">
         <header>
             <h1 id="app-title">Dashboard</h1>
@@ -112,7 +91,6 @@
             <button class="logout" onclick="location.reload()">Keluar</button>
         </header>
 
-        <!-- ADMIN PANEL -->
         <div id="panel-admin" class="hidden">
             <div class="card">
                 <h2>⚙️ Aksi Admin</h2>
@@ -122,14 +100,12 @@
                     <button class="btn-primary" onclick="cetakPDF('individu')" style="flex:1; background:#1976d2">📄 PDF Individu</button>
                 </div>
             </div>
-            
             <div class="stats-grid">
                 <div class="stat-card"><div>Hari Ini</div><div class="stat-val" id="st-today">0</div></div>
                 <div class="stat-card" style="background:#2196f3"><div>Minggu Ini</div><div class="stat-val" id="st-week">0</div></div>
                 <div class="stat-card" style="background:#ff9800"><div>Bulan Ini</div><div class="stat-val" id="st-month">0</div></div>
                 <div class="stat-card" style="background:#f44336"><div>Aktif</div><div class="stat-val" id="st-active">0/12</div></div>
             </div>
-
             <div class="card">
                 <h2>📜 Semua Data</h2>
                 <div style="overflow-x:auto;">
@@ -141,7 +117,6 @@
             </div>
         </div>
 
-        <!-- MUSYRIF PANEL -->
         <div id="panel-musyrif" class="hidden">
             <div class="card">
                 <h2>📝 Input Absensi</h2>
@@ -162,12 +137,10 @@
                     <button type="submit" class="btn-primary" id="btn-kirim">✅ Kirim Absensi</button>
                 </form>
             </div>
-
             <div class="card">
                 <h2>📊 Statistik Saya</h2>
                 <div style="height:200px"><canvas id="chart-saya"></canvas></div>
             </div>
-
             <div class="card">
                 <h2>📜 Riwayat Saya</h2>
                 <div style="overflow-x:auto;">
@@ -180,12 +153,10 @@
         </div>
     </div>
 
-    <!-- MODAL FOTO -->
     <div id="modal-foto" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:10000; justify-content:center; align-items:center;" onclick="this.style.display='none'">
         <img id="img-preview" style="max-width:90%; max-height:90%; border-radius:8px;">
     </div>
 
-    <!-- REPORT SECTION (Hidden for PDF) -->
     <div id="report-area" style="display:none; padding:20px; background:white;"></div>
 
     <script>
@@ -217,7 +188,6 @@
         function switchTab(role) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             event.target.classList.add('active');
-            
             if(role === 'musyrif') {
                 document.getElementById('form-musyrif').classList.remove('hidden');
                 document.getElementById('form-admin').classList.add('hidden');
@@ -232,7 +202,6 @@
             const asrama = document.getElementById('in-asrama').value;
             const selNama = document.getElementById('in-nama');
             selNama.innerHTML = '<option value="">-- Pilih Nama --</option>';
-            
             if (asrama && DATA_MUSYRIF[asrama]) {
                 selNama.disabled = false;
                 Object.keys(DATA_MUSYRIF[asrama].list).forEach(nama => {
@@ -252,6 +221,7 @@
             el.style.display = 'block';
             setTimeout(() => el.style.display = 'none', 3000);
         }
+
         function hideMsg() {
             document.getElementById('msg-error').style.display = 'none';
             document.getElementById('msg-success').style.display = 'none';
@@ -269,7 +239,6 @@
             const asrama = document.getElementById('in-asrama').value;
             const nama = document.getElementById('in-nama').value;
             const pass = document.getElementById('in-pass').value;
-
             if (DATA_MUSYRIF[asrama] && DATA_MUSYRIF[asrama].list[nama] === pass) {
                 loginSuccess(nama, 'musyrif', asrama);
             } else {
@@ -289,12 +258,10 @@
         function loginSuccess(nama, role, asrama) {
             currentUser = { nama, role, asrama };
             currentRole = role;
-            
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-app').style.display = 'block';
             document.getElementById('app-title').textContent = role === 'admin' ? "🛡️ Dashboard Admin" : "📋 Absensi Musyrif";
             document.getElementById('user-info').textContent = `${nama} | ${asrama ? DATA_MUSYRIF[asrama].nama : 'Administrator'}`;
-
             if (role === 'admin') {
                 document.getElementById('panel-admin').classList.remove('hidden');
                 document.getElementById('panel-musyrif').classList.add('hidden');
@@ -308,7 +275,6 @@
 
         // --- LOGIKA MUSYRIF ---
         function initMusyrifView() {
-            // Isi Dropdown Kegiatan
             const sel = document.getElementById('in-kegiatan');
             sel.innerHTML = '<option value="">-- Pilih Kegiatan --</option>';
             JADWAL.forEach(j => {
@@ -317,7 +283,6 @@
             loadData();
         }
 
-        // Kompresi Gambar
         function compressImage(file) {
             return new Promise((resolve) => {
                 const reader = new FileReader();
@@ -333,7 +298,7 @@
                         canvas.width = img.width * scale;
                         canvas.height = img.height * scale;
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.7)); // Kompres jadi JPEG 70%
+                        resolve(canvas.toDataURL('image/jpeg', 0.7));
                     };
                 };
             });
@@ -344,21 +309,17 @@
             const btn = document.getElementById('btn-kirim');
             btn.disabled = true;
             btn.textContent = "Mengirim...";
-
             try {
                 const file = document.getElementById('in-foto').files[0];
                 const compressedImg = await compressImage(file);
-                
                 const payload = {
                     musyrif: currentUser.nama,
                     asrama: DATA_MUSYRIF[currentUser.asrama].nama,
-                    kamar: '-', // Bisa dikembangkan
+                    kamar: '-',
                     kegiatan: document.getElementById('in-kegiatan').value,
                     foto: compressedImg,
                     catatan: document.getElementById('in-catatan').value
                 };
-
-                // Optimistic Update (Tampilkan dulu di UI biar user senang)
                 const tempData = {
                     Timestamp: new Date().toISOString(),
                     'Nama Musyrif': payload.musyrif,
@@ -371,13 +332,7 @@
                 allData.push(tempData);
                 renderMyTable();
                 renderChart();
-
-                // Kirim ke Server
-                await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify(payload)
-                });
-
+                await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
                 alert("✅ Absensi Berhasil Disimpan!");
                 document.getElementById('form-absen').reset();
             } catch (err) {
@@ -393,12 +348,10 @@
         async function loadData() {
             const btn = document.querySelector('#panel-admin button');
             if(btn) { btn.disabled = true; btn.textContent = "Loading..."; }
-
             try {
                 const res = await fetch(API_URL);
                 if (!res.ok) throw new Error("Network response was not ok");
                 allData = await res.json();
-                
                 if (currentRole === 'admin') {
                     renderAdminTable();
                     calcStats();
@@ -408,7 +361,7 @@
                 }
             } catch (err) {
                 console.error("Error load data:", err);
-                alert("Gagal mengambil data dari Google Sheets. Pastikan Script sudah di-Deploy sebagai Web App dengan akses 'Anyone'.");
+                alert("Gagal mengambil data dari Google Sheets.");
             } finally {
                 if(btn) { btn.disabled = false; btn.textContent = "🔄 Refresh Data"; }
             }
@@ -421,8 +374,6 @@
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Belum ada data</td></tr>';
                 return;
             }
-            
-            // Urutkan terbaru diatas
             [...allData].reverse().forEach(d => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -441,12 +392,10 @@
             const tbody = document.querySelector('#tbl-saya tbody');
             tbody.innerHTML = '';
             const myData = allData.filter(d => d['Nama Musyrif'] === currentUser.nama);
-            
             if (myData.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="3" style="text-align:center">Belum ada riwayat</td></tr>';
                 return;
             }
-
             [...myData].reverse().forEach(d => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -477,11 +426,9 @@
         function calcStats() {
             const today = new Date().toDateString();
             const weekAgo = Date.now() - 7 * 864e5;
-            
             document.getElementById('st-today').textContent = allData.filter(d => new Date(d.Timestamp).toDateString() === today).length;
             document.getElementById('st-week').textContent = allData.filter(d => new Date(d.Timestamp) >= weekAgo).length;
             document.getElementById('st-month').textContent = allData.length;
-            
             const uniqueUsers = new Set(allData.filter(d => new Date(d.Timestamp) >= weekAgo).map(d => d['Nama Musyrif']));
             document.getElementById('st-active').textContent = `${uniqueUsers.size}/12`;
         }
@@ -490,25 +437,21 @@
         function renderChart() {
             const ctx = document.getElementById('chart-saya');
             if (!ctx) return;
-            
             const myData = allData.filter(d => d['Nama Musyrif'] === currentUser.nama);
             const days = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
             const counts = [0,0,0,0,0,0,0];
-            
             myData.forEach(d => {
                 const dayIdx = new Date(d.Timestamp).getDay();
                 counts[dayIdx]++;
             });
-
             if (myChart) myChart.destroy();
-            
             myChart = new Chart(ctx, {
                 type: 'bar',
-                 {
+                data: {
                     labels: days,
                     datasets: [{
                         label: 'Kehadiran Minggu Ini',
-                         counts,
+                        data: counts,
                         backgroundColor: '#4caf50',
                         borderRadius: 5
                     }]
@@ -524,24 +467,19 @@
         // --- PDF GENERATOR ---
         function cetakPDF(type) {
             if(allData.length === 0) return alert("Tidak ada data untuk dicetak!");
-            
             const reportDiv = document.getElementById('report-area');
-            reportDiv.innerHTML = ''; // Clear old content
+            reportDiv.innerHTML = '';
             reportDiv.style.display = 'block';
-
             let html = `<h1 style="text-align:center; color:#2e7d32">LAPORAN ABSENSI MUSYRIF</h1>
                         <p style="text-align:center">Dicetak pada: ${new Date().toLocaleString()}</p><hr>`;
-
             if (type === 'asrama') {
                 Object.keys(DATA_MUSYRIF).forEach(key => {
                     const asramaName = DATA_MUSYRIF[key].nama;
                     const dataAsrama = allData.filter(d => d.Asrma === asramaName);
-                    
                     html += `<h3>${asramaName}</h3>
                              <table border="1" cellpadding="5" cellspacing="0" style="width:100%; margin-bottom:20px">
                                 <thead><tr style="background:#eee"><th>Nama</th><th>Jumlah Absen</th><th>Status</th></tr></thead>
                                 <tbody>`;
-                    
                     Object.keys(DATA_MUSYRIF[key].list).forEach(nama => {
                         const count = dataAsrama.filter(d => d['Nama Musyrif'] === nama).length;
                         const status = count > 5 ? "Aktif" : (count > 0 ? "Cukup" : "Kurang");
@@ -550,13 +488,10 @@
                     html += `</tbody></table>`;
                 });
             } else {
-                // Individu
                 const nama = prompt("Masukkan Nama Musyrif tepat (Case Sensitive):");
                 if(!nama) { reportDiv.style.display='none'; return; }
-                
                 const dataIndi = allData.filter(d => d['Nama Musyrif'] === nama);
                 if(dataIndi.length === 0) { alert("Data tidak ditemukan"); reportDiv.style.display='none'; return; }
-
                 html += `<h3>Laporan: ${nama}</h3>
                          <table border="1" cellpadding="5" cellspacing="0" style="width:100%">
                             <thead><tr style="background:#eee"><th>Tanggal</th><th>Kegiatan</th><th>Catatan</th></tr></thead>
@@ -566,10 +501,7 @@
                 });
                 html += `</tbody></table>`;
             }
-
             reportDiv.innerHTML = html;
-
-            // Generate PDF using html2canvas & jsPDF
             setTimeout(() => {
                 const { jsPDF } = window.jspdf;
                 html2canvas(reportDiv).then(canvas => {
@@ -578,14 +510,12 @@
                     const imgProps = pdf.getImageProperties(imgData);
                     const pdfWidth = pdf.internal.pageSize.getWidth();
                     const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-                    
                     pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
                     pdf.save(`Laporan_${type}_${new Date().toISOString().slice(0,10)}.pdf`);
                     reportDiv.style.display = 'none';
                 });
             }, 500);
         }
-
     </script>
 </body>
 </html>
