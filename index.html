@@ -221,7 +221,7 @@
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxIgw3SPRwZkl8tet6m_pSOJ-Czm1iSQQ8dEo30x0WaJmJu3pRzp8fvhB7q88l2svOC/exec";
         const ADMIN_PIN = "1234";
         const WA_ADMIN = "6285893588373";
-        const STORAGE_KEY = 'absensi_musyrif_data_v3';
+        const STORAGE_KEY = 'absensi_meta_v3'; // Hanya simpan metadata, bukan foto
         
         const MUSYRIF_BY_ASMARA = {
             "al-hakim": { name: "Asrama Al Hakim", musyrif: { "Ali Mashuri": { pass: "ali123", rooms: ["Khondak", "Uhud"] }, "Ali Zahid": { pass: "zahid123", rooms: ["Badar"] }, "Reva Dwi": { pass: "reva123", rooms: ["Khoibar"] }, "Imam Syafi'i": { pass: "imam123", rooms: ["Multazam"] } } },
@@ -361,11 +361,11 @@
             if(myChart) myChart.destroy();
             myChart = new Chart(ctx, {
                 type: 'bar',
-                data: {
+                 {
                     labels: days,
                     datasets: [{
                         label: 'Jumlah Absensi',
-                        data: chartData,
+                         chartData,
                         backgroundColor: ['rgba(46,125,50,0.8)','rgba(76,175,80,0.8)','rgba(139,195,74,0.8)','rgba(205,220,57,0.8)','rgba(255,193,7,0.8)','rgba(255,152,0,0.8)','rgba(244,67,54,0.8)'],
                         borderWidth: 2,
                         borderRadius: 8
@@ -418,11 +418,11 @@
             if(adminChart) adminChart.destroy();
             adminChart = new Chart(ctx2, {
                 type: 'bar',
-                data: {
+                 {
                     labels: names,
                     datasets: [{
                         label: 'Kehadiran Minggu Ini (%)',
-                        data: perfData,
+                         perfData,
                         backgroundColor: colors,
                         borderWidth: 2
                     }]
@@ -443,24 +443,8 @@
             }
             
             try {
-                const storedData = localStorage.getItem(STORAGE_KEY);
-                if (storedData) {
-                    data = JSON.parse(storedData);
-                    if (role === 'admin') { 
-                        updAdminStats(); 
-                        renderAdminTable(); 
-                    } else { 
-                        renderMyTable(); 
-                        showStats(); 
-                    }
-                }
-            } catch (e) {
-                console.error('Error loading from localStorage:', e);
-            }
-            
-            try {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000);
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
                 
                 const res = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'GET',
@@ -471,10 +455,7 @@
                 
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 
-                const googleData = await res.json();
-                data = googleData;
-                
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                data = await res.json();
                 
                 if (role === 'admin') { 
                     updAdminStats(); 
@@ -487,19 +468,15 @@
                 showSuccess('✅ Data berhasil dimuat dari Google Sheets');
             } catch (e) {
                 console.error('Error loading from Google Sheets:', e);
-                if (data.length === 0) {
-                    const storedData = localStorage.getItem(STORAGE_KEY);
-                    if (storedData) {
-                        data = JSON.parse(storedData);
-                        if (role === 'admin') { 
-                            updAdminStats(); 
-                            renderAdminTable(); 
-                        } else { 
-                            renderMyTable(); 
-                            showStats(); 
-                        }
-                    }
+                data = [];
+                if (role === 'admin') { 
+                    updAdminStats(); 
+                    renderAdminTable(); 
+                } else { 
+                    renderMyTable(); 
+                    showStats(); 
                 }
+                alert('⚠️ Tidak bisa mengambil data dari Google Sheets. Periksa koneksi internet.');
             } finally {
                 if(btnRefresh) {
                     btnRefresh.disabled = false;
@@ -544,7 +521,7 @@
             
             const btn = document.getElementById('sub-btn'); 
             btn.disabled=true; 
-            btn.textContent='⏳ Menyimpan...';
+            btn.textContent='⏳ Mengirim...';
             
             try {
                 const b64 = await new Promise((r,j)=>{
@@ -565,45 +542,33 @@
                     Catatan: document.getElementById('notes').value
                 };
                 
-                data.push(newData);
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-                
-                if (role === 'admin') { 
-                    updAdminStats(); 
-                    renderAdminTable(); 
-                } else { 
-                    renderMyTable(); 
-                    showStats(); 
-                }
-                
+                // Kirim ke Google Sheets
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000);
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
                 
-                try {
-                    const res = await fetch(GOOGLE_SCRIPT_URL, {
-                        method: 'POST',
-                        body: JSON.stringify(newData),
-                        signal: controller.signal
-                    });
-                    
-                    clearTimeout(timeoutId);
-                    
-                    if (res.ok) {
-                        const result = await res.json();
-                        if (result.result === 'success') {
-                            console.log('✅ Data tersimpan di Google Sheets');
-                        }
-                    }
-                } catch (sheetError) {
-                    console.warn('⚠️ Gagal simpan ke Google Sheets, tapi data tersimpan di browser', sheetError);
+                const res = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(newData),
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                
+                const result = await res.json();
+                
+                if (result.result === 'success') {
+                    alert('✅ Absensi berhasil dikirim dan tersimpan di Google Sheets!');
+                    document.getElementById('absen-form').reset();
+                    loadData();
+                    if(role === 'musyrif') showStats();
+                } else {
+                    throw new Error(result.message || 'Gagal menyimpan data');
                 }
-                
-                alert('✅ Absensi berhasil disimpan!\n\n📱 Tersimpan di:\n- Browser (langsung tampil)\n- Google Sheets (backup online)');
-                document.getElementById('absen-form').reset();
-                
             } catch(err) {
                 console.error('Error:', err);
-                alert('❌ Gagal menyimpan: ' + err.message);
+                alert('❌ Gagal mengirim: ' + err.message + '\n\nPastikan:\n1. Koneksi internet stabil\n2. Google Script sudah di-deploy dengan akses "Anyone"');
             } finally {
                 btn.disabled=false; 
                 btn.textContent='✅ Kirim Absensi';
@@ -614,26 +579,25 @@
             if(!confirm(`Hapus data ${nm}?`)) return;
             
             try {
-                data = data.filter(d => d.Timestamp !== ts);
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                const payload = {
+                    action: 'delete',
+                    timestamp: ts,
+                    musyrif: nm
+                };
                 
-                try {
-                    const payload = {
-                        action: 'delete',
-                        timestamp: ts,
-                        musyrif: nm
-                    };
-                    
-                    await fetch(GOOGLE_SCRIPT_URL, {
-                        method: 'POST',
-                        body: JSON.stringify(payload)
-                    });
-                } catch (sheetError) {
-                    console.warn('⚠️ Gagal hapus dari Google Sheets', sheetError);
+                const res = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await res.json();
+                
+                if (result.result === 'success') {
+                    alert('✅ Data berhasil dihapus');
+                    loadData();
+                } else {
+                    throw new Error(result.message);
                 }
-                
-                alert('✅ Data berhasil dihapus');
-                loadData();
             } catch (err) {
                 alert('❌ Gagal menghapus: ' + err.message);
             }
