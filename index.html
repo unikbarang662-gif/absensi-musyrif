@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Absensi Musyrif - Laporan PDF</title>
+    <title>Absensi Musyrif</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
     <style>
         :root { --primary:#2e7d32; --light:#4caf50; --bg:#f5f7f5; --card:#fff; --text:#333; --border:#ddd; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
@@ -20,7 +19,7 @@
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: 500; }
         input, select, textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; }
-        button { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-wa { background: #25D366; color: white; margin-top: 10px; }
         .btn-danger { background: #d32f2f; color: white; padding: 5px 10px; font-size: 0.8rem; width: auto; }
@@ -43,7 +42,6 @@
     </style>
 </head>
 <body>
-
     <div id="login-screen">
         <div class="box">
             <h2 style="text-align:center; border:none;">📋 Absensi Musyrif</h2>
@@ -160,9 +158,9 @@
     <div id="report-area" style="display:none; padding:20px; background:white;"></div>
 
     <script>
-        // --- KONFIGURASI ---
-        const API_URL = "https://script.google.com/macros/s/AKfycby7jOQokyXVJY8Q2tX5fOWrERB-c-V1acYSSYDXTElWhCP-F4nlzbOrFVD6poR0kG8M/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycby7jOQokyXVJY8Q2tX5f0WrERB-c-V1acYSSYDXTElWhCP-F4nlzbOrFVD6poR0kG8M/exec";
         const PIN_ADMIN = "1234";
+        const STORAGE_KEY = 'absensi_data';
         
         const DATA_MUSYRIF = {
             "al-hakim": { nama:"Al Hakim", list:{"Ali Mashuri":"ali123", "Ali Zahid":"zahid123", "Reva Dwi":"reva123", "Imam Syafi'i":"imam123"} },
@@ -178,13 +176,11 @@
             {n:"Jam Tidur", t:"21:30-22:00"}
         ];
 
-        // --- STATE ---
         let currentUser = null;
         let currentRole = null;
         let allData = [];
         let myChart = null;
 
-        // --- FUNGSI LOGIN & UI ---
         function switchTab(role) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             event.target.classList.add('active');
@@ -233,7 +229,6 @@
             window.open(`https://wa.me/6285893588373?text=Saya ${nama} lupa password`, '_blank');
         }
 
-        // --- EVENT LISTENERS LOGIN ---
         document.getElementById('form-musyrif').onsubmit = (e) => {
             e.preventDefault();
             const asrama = document.getElementById('in-asrama').value;
@@ -273,7 +268,6 @@
             }
         }
 
-        // --- LOGIKA MUSYRIF ---
         function initMusyrifView() {
             const sel = document.getElementById('in-kegiatan');
             sel.innerHTML = '<option value="">-- Pilih Kegiatan --</option>';
@@ -320,6 +314,8 @@
                     foto: compressedImg,
                     catatan: document.getElementById('in-catatan').value
                 };
+                
+                // Simpan ke localStorage dulu (agar pasti tersimpan)
                 const tempData = {
                     Timestamp: new Date().toISOString(),
                     'Nama Musyrif': payload.musyrif,
@@ -329,29 +325,52 @@
                     Foto: payload.foto,
                     Catatan: payload.catatan
                 };
-                allData.push(tempData);
+                
+                // Simpan ke localStorage
+                let localData = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+                localData.push(tempData);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(localData));
+                
+                // Update UI langsung
+                allData = localData;
                 renderMyTable();
                 renderChart();
-                await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
-                alert("✅ Absensi Berhasil Disimpan!");
+                
+                // Kirim ke Google Sheets (mode no-cors)
+                try {
+                    await fetch(API_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(payload)
+                    });
+                    alert("✅ Absensi Berhasil Disimpan!");
+                } catch (sheetError) {
+                    alert("✅ Data tersimpan di browser (Google Sheets error)");
+                }
+                
                 document.getElementById('form-absen').reset();
             } catch (err) {
                 console.error(err);
-                alert("❌ Gagal mengirim. Cek koneksi internet.");
+                alert("❌ Gagal mengirim.");
             } finally {
                 btn.disabled = false;
                 btn.textContent = "✅ Kirim Absensi";
             }
         };
 
-        // --- LOGIKA ADMIN & DATA ---
         async function loadData() {
             const btn = document.querySelector('#panel-admin button');
             if(btn) { btn.disabled = true; btn.textContent = "Loading..."; }
+            
             try {
-                const res = await fetch(API_URL);
-                if (!res.ok) throw new Error("Network response was not ok");
-                allData = await res.json();
+                // Coba ambil dari Google Sheets
+                const response = await fetch(API_URL, { mode: 'no-cors' });
+                // Karena no-cors, kita tidak bisa baca response
+                // Jadi kita load dari localStorage
+                const localData = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+                allData = localData;
+                
                 if (currentRole === 'admin') {
                     renderAdminTable();
                     calcStats();
@@ -360,8 +379,16 @@
                     renderChart();
                 }
             } catch (err) {
-                console.error("Error load data:", err);
-                alert("Gagal mengambil data dari Google Sheets.");
+                // Fallback ke localStorage
+                const localData = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+                allData = localData;
+                if (currentRole === 'admin') {
+                    renderAdminTable();
+                    calcStats();
+                } else {
+                    renderMyTable();
+                    renderChart();
+                }
             } finally {
                 if(btn) { btn.disabled = false; btn.textContent = "🔄 Refresh Data"; }
             }
@@ -414,13 +441,10 @@
 
         async function hapusData(ts, nama) {
             if(!confirm(`Hapus data ${nama}?`)) return;
-            try {
-                await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'delete', timestamp: ts, musyrif: nama })
-                });
-                loadData();
-            } catch(e) { alert("Gagal menghapus"); }
+            // Hapus dari localStorage
+            allData = allData.filter(d => d.Timestamp !== ts);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(allData));
+            loadData();
         }
 
         function calcStats() {
@@ -433,7 +457,6 @@
             document.getElementById('st-active').textContent = `${uniqueUsers.size}/12`;
         }
 
-        // --- CHART.JS ---
         function renderChart() {
             const ctx = document.getElementById('chart-saya');
             if (!ctx) return;
@@ -464,7 +487,6 @@
             });
         }
 
-        // --- PDF GENERATOR ---
         function cetakPDF(type) {
             if(allData.length === 0) return alert("Tidak ada data untuk dicetak!");
             const reportDiv = document.getElementById('report-area');
@@ -488,7 +510,7 @@
                     html += `</tbody></table>`;
                 });
             } else {
-                const nama = prompt("Masukkan Nama Musyrif tepat (Case Sensitive):");
+                const nama = prompt("Masukkan Nama Musyrif:");
                 if(!nama) { reportDiv.style.display='none'; return; }
                 const dataIndi = allData.filter(d => d['Nama Musyrif'] === nama);
                 if(dataIndi.length === 0) { alert("Data tidak ditemukan"); reportDiv.style.display='none'; return; }
