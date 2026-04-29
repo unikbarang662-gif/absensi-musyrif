@@ -144,9 +144,8 @@
                 <div style="overflow-x:auto">
                     <table>
                         <thead><tr><th>Waktu</th><th>Nama</th><th>Asrama</th><th>Kegiatan</th><th>Foto</th><th></th></tr></thead>
-                        <tbody id="adminTableBody"><tr><td colspan="6">Memuat...</td></tr>
-                    </tbody>
-                </table>
+                        <tbody id="adminTableBody"><tr><td colspan="6">Memuat...</td></tr></tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -191,8 +190,7 @@
                 <div style="overflow-x:auto">
                     <table>
                         <thead><tr><th>Waktu</th><th>Kegiatan</th><th>Foto</th></tr></thead>
-                        <tbody id="riwayatBody"><tr><td colspan="3">Memuat...</td></tr>
-                    </tbody>
+                        <tbody id="riwayatBody"><tr><td colspan="3">Memuat...</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -218,7 +216,7 @@
 
 <script>
 // ==================== KONFIGURASI ====================
-// URL Google Apps Script ANDA
+// 🔧 GANTI URL INI DENGAN URL WEB APP ANDA!
 const API_URL = "https://script.google.com/macros/s/AKfycbzqxdUO_DRmlyDfiT_ceVuW6U4Pqh6Cw8guD7A9ZPoNQ93WYNrwQvnHfFgAfmJkFWVV/exec";
 const PIN_ADMIN = "1234";
 
@@ -232,14 +230,13 @@ const JADWAL = ["Membangunkan Santri", "Pengajian Subuh", "Menggobraki Sekolah",
 
 let role = "", userLogin = "", asramaLogin = "", semuaData = [];
 let myChart = null, adminChart = null;
-let isLoading = false;
 
 // ==================== UTILITY ====================
 function showToast(msg) {
     const toast = document.getElementById('toast');
     toast.textContent = msg;
     toast.style.display = 'block';
-    setTimeout(() => toast.style.display = 'none', 2000);
+    setTimeout(() => toast.style.display = 'none', 3000);
 }
 
 function showLoading(show) {
@@ -249,30 +246,41 @@ function showLoading(show) {
 // ==================== API CALLS ====================
 async function fetchData() {
     try {
+        showLoading(true);
         const response = await fetch(API_URL);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         return Array.isArray(data) ? data : [];
     } catch(e) {
         console.error("Fetch error:", e);
-        return null;
+        showToast("❌ Gagal mengambil data!");
+        return [];
+    } finally {
+        showLoading(false);
     }
 }
 
-async function postData( data) {
+async function postData(data) {
     try {
+        showLoading(true);
         const response = await fetch(API_URL, {
             method: 'POST',
-            mode: 'no-cors',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
-        // Karena mode no-cors, response tidak bisa dibaca
-        // Tapi request tetap terkirim
-        return { success: true };
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const result = await response.json();
+        return result;
     } catch(e) {
         console.error("Post error:", e);
+        showToast("❌ Gagal menyimpan data!");
         return null;
+    } finally {
+        showLoading(false);
     }
 }
 
@@ -287,24 +295,11 @@ async function loadData(force = false) {
         return true;
     }
     
-    showLoading(true);
     const result = await fetchData();
-    showLoading(false);
-    
-    if (result !== null) {
+    if (result !== null && result !== undefined) {
         semuaData = result;
         dataCache = result;
         lastLoadTime = Date.now();
-        return true;
-    }
-    return false;
-}
-
-async function saveData(data) {
-    const result = await postData(data);
-    if (result !== null) {
-        dataCache = null;
-        lastLoadTime = 0;
         return true;
     }
     return false;
@@ -414,6 +409,8 @@ function getAssessment(percentage) {
 }
 
 function renderAdmin() {
+    if (!semuaData) semuaData = [];
+    
     const today = new Date().toDateString();
     const weekAgo = new Date(Date.now() - 7*86400000);
     const monthAgo = new Date(Date.now() - 30*86400000);
@@ -490,8 +487,8 @@ function renderAdmin() {
 
 async function hapusData(timestamp) {
     if (confirm("Hapus data ini?")) {
-        const result = await saveData({ action: 'delete', timestamp: timestamp });
-        if (result) {
+        const result = await postData({ action: 'delete', timestamp: timestamp });
+        if (result && result.success) {
             await loadData(true);
             renderAdmin();
             showToast("✅ Data dihapus");
@@ -602,8 +599,8 @@ async function pdfPerIndividu() {
     <h4>📊 RINGKASAN</h4>
     <table class="assessment-table">
         <thead><th>Periode</th><th>Absen</th><th>Persen</th><th>Status</th></thead>
-        <tbody><tr><td>Mingguan</th><td>${weeklyCount} kali</th><td>${persenMinggu}%</th><td>${assessment.status}</th></tr></tbody>
-    追赶
+        <tbody><tr><th>Mingguan</th><th>${weeklyCount} kali</th><th>${persenMinggu}%</th><th>${assessment.status}</th></tr></tbody>
+    </table>
     <h4>📜 RIWAYAT</h4>
     <table class="assessment-table"><thead><th>No</th><th>Tanggal</th><th>Kegiatan</th></thead><tbody>`;
     
@@ -644,6 +641,7 @@ function renderJadwal() {
 }
 
 function renderUser() {
+    if (!semuaData) semuaData = [];
     const myData = semuaData.filter(d => d.Nama === userLogin);
     const today = new Date().toDateString();
     const weekAgo = new Date(Date.now() - 7*86400000);
@@ -702,7 +700,8 @@ async function simpanAbsen() {
     
     try {
         const fotoBase64 = await bacaFile(fileFoto);
-        const result = await saveData({
+        const result = await postData({
+            action: 'add',
             timestamp: new Date().toISOString(),
             nama: userLogin,
             asrama: DATA_MUSYRIF[asramaLogin].nama,
@@ -712,7 +711,7 @@ async function simpanAbsen() {
             catatan: catatan
         });
         
-        if (result) {
+        if (result && result.success) {
             await loadData(true);
             renderUser();
             if (role === "admin") renderAdmin();
@@ -724,6 +723,7 @@ async function simpanAbsen() {
             showToast("❌ Gagal menyimpan!");
         }
     } catch(err) {
+        console.error(err);
         showToast("❌ Error: " + err.message);
     } finally {
         btn.disabled = false;
@@ -745,7 +745,7 @@ function lihatFoto(src) {
     document.getElementById('modalFoto').style.display = 'block';
 }
 
-console.log("✅ Aplikasi siap dengan URL Web App Anda!");
+console.log("✅ Aplikasi siap pakai!");
 </script>
 </body>
 </html>
