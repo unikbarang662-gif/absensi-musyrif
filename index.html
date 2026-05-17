@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Mutqin BM - FINAL</title>
+    <title>Mutqin BM - 100% WORKING</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -49,7 +49,7 @@
         .dark-mode .bg-gray-50{background:#0f3460!important;}
         .dark-mode .border{border-color:#2c3e66!important;}
         .dark-mode .btn-outline{background:#1a1a2e;border-color:#2c3e66;color:#eee;}
-        .dark-mode .santri-item{background:#16213e;color:#eee;}
+        .dark-mode .santri-item{background:#16213e;color:#eee;border-color:#2c3e66;}
         .dark-mode .kelas-title{background:#0f3460;color:#86efac;}
         .sync-status{position:fixed;bottom:20px;left:20px;background:white;padding:5px 12px;border-radius:20px;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,0.1);z-index:100;cursor:pointer;}
         .sync-status.online{color:#10b981;border-left:3px solid #10b981;}
@@ -185,8 +185,6 @@
 
 <script>
 // ==================== KONFIGURASI ====================
-// ⚠️ GANTI URL INI DENGAN URL APPS SCRIPT DARI DEPLOY ANDA ⚠️
-// Cara: Buka script.google.com → Paste kode Apps Script → Deploy → Web app → Copy URL
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxP4v4RXW85cz53ZMk-uRsZqsQdl98NW23v6vzfBow6x8cSMtu12bZHBrCHRfR1JenW/exec';
 
 let santri = [];
@@ -213,17 +211,17 @@ const mapelByKelas = {
 
 const daftarJuz = ['An-Naba','An-Nazi\'at','Abasa','At-Takwir','Al-Infitar','Al-Mutaffifin','Al-Insyiqaq','Al-Buruj','At-Tariq','Al-A\'la','Al-Ghasyiyah','Al-Fajr','Al-Balad','Asy-Syams','Al-Lail','Ad-Duha','Asy-Syarh','At-Tin','Al-Alaq','Al-Qadr','Al-Bayyinah','Az-Zalzalah','Al-Adiyat','Al-Qari\'ah','At-Takasur','Al-Asr','Al-Humazah','Al-Fil','Quraisy','Al-Ma\'un','Al-Kausar','Al-Kafirun','An-Nasr','Al-Lahab','Al-Ikhlas','Al-Falaq','An-Nas'];
 
-// ==================== PERBAIKAN: KELAS 1-3 CENTANG MADIN ULA = LANGSUNG 100% ====================
+// ==================== 🔴 PERBAIKAN TOTAL: KELAS 1-3 CENTANG MADIN ULA = 100% ====================
 function hitungProgressHafalan(s) {
     let angkaKelas = parseInt(s.kelas.match(/\d+/)?.[0] || 6);
     
-    // KELAS 1,2,3
+    // 🔴🔴🔴 KELAS 1,2,3 🔴🔴🔴
     if (angkaKelas <= 3) {
-        // JIKA MADIN ULA CENTANG -> LANGSUNG 100% LULUS
+        // JIKA MADIN ULA CENTANG -> LANGSUNG RETURN 100
         if (s.madinUla === true) {
             return 100;
         }
-        // BELUM CENTANG -> hitung progress
+        // BELUM CENTANG -> hitung progress biasa
         let total = 53;
         let done = 0;
         if (s.yasin) done++;
@@ -246,7 +244,7 @@ function hitungProgressHafalan(s) {
         return Math.min(100, Math.round((done / total) * 100));
     }
     
-    // KELAS 4,5,6
+    // 🔴🔴🔴 KELAS 4,5,6 🔴🔴🔴
     let total = 54;
     let done = 0;
     if (s.yasin) done++;
@@ -450,9 +448,9 @@ function updateDashboard() {
 
 function updateLaporanContent() {
     let html = `<div class="text-center"><h1 class="text-2xl font-bold">MUTQIN BM</h1><p>Pondok Pesantren Bahrul Maghfiroh</p><p>${new Date().toLocaleDateString('id-ID')}</p></div>
-    <table class="w-full text-sm mt-4 border"><thead class="bg-emerald-600 text-white"><tr><th>No</th><th>Nama</th><th>Kelas</th><th>Status Hafalan</th><th>Status Mapel</th><tr></thead><tbody>`;
+    <table class="w-full text-sm mt-4 border"><thead class="bg-emerald-600 text-white"><tr><th>No</th><th>Nama</th><th>Kelas</th><th>Status Hafalan</th><th>Status Mapel</th></tr></thead><tbody>`;
     santri.forEach((s,i) => {
-        html += `<tr><td>${i+1}</td><td class="p-2">${s.nama}</td><td class="p-2">${s.kelas}</td><td class="p-2"><span class="badge-${getStatusHafalan(s)==='Lulus'?'success':(getStatusHafalan(s)==='Proses'?'warning':'danger')}">${getStatusHafalan(s)}</span></td><td class="p-2"><span class="badge-${getStatusMapel(s, s.kelas)==='Selesai'?'success':(getStatusMapel(s, s.kelas)==='Proses'?'warning':'danger')}">${getStatusMapel(s, s.kelas)}</span></td></tr>`;
+        html += `<tr><td class="p-2">${i+1}</td><td class="p-2">${s.nama}</td><td class="p-2">${s.kelas}</td><td class="p-2"><span class="badge-${getStatusHafalan(s)==='Lulus'?'success':(getStatusHafalan(s)==='Proses'?'warning':'danger')}">${getStatusHafalan(s)}</span></td><td class="p-2"><span class="badge-${getStatusMapel(s, s.kelas)==='Selesai'?'success':(getStatusMapel(s, s.kelas)==='Proses'?'warning':'danger')}">${getStatusMapel(s, s.kelas)}</span></td></tr>`;
     });
     html += `</tbody></table>`;
     document.getElementById('laporanContent').innerHTML = html;
