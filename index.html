@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Mutqin BM - Sistem Manajemen Kelulusan & Tam-taman</title>
+    <title>Mutqin BM - Sistem Kelulusan & Tam-taman</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -62,7 +62,6 @@
         .role-badge.admin { background: #dcfce7; color: #166534; }
         .role-badge.guru { background: #fef3c7; color: #92400e; }
         .clickable { cursor: pointer; }
-        .clickable:hover { opacity: 0.8; transform: scale(1.01); }
         .progress-small { width: 60px; height: 4px; background: #e5e7eb; border-radius: 10px; overflow: hidden; display: inline-block; margin-left: 8px; }
         .progress-fill-small { height: 100%; background: #10b981; }
         .progress-bar { width: 80px; height: 6px; background: #e5e7eb; border-radius: 10px; overflow: hidden; }
@@ -362,8 +361,9 @@
 </div>
 
 <script>
-// ==================== KONFIGURASI ====================
-// URL APPS SCRIPT ANDA SUDAH DI-PASANG LANGSUNG DI SINI
+// ==================== KONFIGURASI CLOUD ====================
+// ⚠️ GANTI URL INI DENGAN URL APPS SCRIPT ANDA ⚠️
+// URL SUDAH SAYA SIAPKAN, TINGGAL COPY DARI DEPLOY ANDA
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxP4v4RXW85cz53ZMk-uRsZqsQdl98NW23v6vzfBow6x8cSMtu12bZHBrCHRfR1JenW/exec';
 
 let santri = [];
@@ -473,6 +473,11 @@ function getNewSantri() {
 
 // ==================== CLOUD SYNC (GOOGLE SHEETS) ====================
 async function syncToCloud() {
+    if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'https://script.google.com/macros/s/YOUR_APPS_SCRIPT_URL_HERE/exec') {
+        showToast('⚠️ URL Apps Script belum diatur!', 'warning');
+        return;
+    }
+
     try {
         setSyncStatus('Menyimpan ke cloud...', 'syncing');
         document.getElementById('cloudStatus').innerHTML = '⏳ Menyimpan ke Google Sheets...';
@@ -496,6 +501,9 @@ async function syncToCloud() {
             setSyncStatus('✅ Tersimpan!', 'online');
             document.getElementById('cloudStatus').innerHTML = '✅ Data tersimpan di cloud ' + new Date().toLocaleTimeString();
             showToast('✅ Data berhasil disimpan ke cloud!', 'success');
+            
+            localStorage.setItem('mutqin_santri_cloud_backup', JSON.stringify(santri));
+            localStorage.setItem('mutqin_profil_cloud_backup', JSON.stringify(profilData));
         } else {
             throw new Error(result.message || 'Gagal menyimpan');
         }
@@ -503,11 +511,16 @@ async function syncToCloud() {
         console.error('Sync error:', e);
         setSyncStatus('❌ Gagal sync', 'offline');
         document.getElementById('cloudStatus').innerHTML = '❌ Gagal menyimpan: ' + e.message;
-        showToast('❌ Gagal sync ke cloud! Periksa koneksi internet', 'error');
+        showToast('❌ Gagal sync ke cloud! Periksa URL Apps Script', 'error');
     }
 }
 
 async function loadFromCloud() {
+    if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'https://script.google.com/macros/s/YOUR_APPS_SCRIPT_URL_HERE/exec') {
+        showToast('⚠️ URL Apps Script belum diatur!', 'warning');
+        return;
+    }
+
     try {
         setSyncStatus('Memuat dari cloud...', 'syncing');
         document.getElementById('cloudStatus').innerHTML = '⏳ Memuat dari Google Sheets...';
