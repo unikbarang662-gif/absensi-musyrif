@@ -17,6 +17,7 @@
         .toast-success{background:#10b981;color:white;}
         .toast-error{background:#ef4444;color:white;}
         .toast-warning{background:#f59e0b;color:white;}
+        .toast-sync{background:#3b82f6;color:white;}
         @keyframes fadeIn{from{opacity:0;transform:translateX(100px);}to{opacity:1;transform:translateX(0);}}
         .nav-item{padding:12px 16px;margin:4px 12px;border-radius:12px;cursor:pointer;transition:0.2s;display:flex;align-items:center;gap:12px;}
         .nav-item:hover{background:#d1fae5;}
@@ -26,6 +27,8 @@
         .btn-outline{background:white;border:1px solid #d1d5db;padding:8px 16px;border-radius:10px;cursor:pointer;}
         .btn-outline:hover{border-color:#10b981;color:#10b981;}
         .btn-success{background:#059669;color:white;padding:8px 16px;border-radius:10px;font-weight:600;cursor:pointer;}
+        .btn-sync{background:#3b82f6;color:white;padding:8px 16px;border-radius:10px;font-weight:600;cursor:pointer;border:none;}
+        .btn-sync:hover{background:#2563eb;}
         .badge-success{background:#d1fae5;color:#065f46;padding:4px 10px;border-radius:20px;font-size:12px;}
         .badge-warning{background:#fed7aa;color:#9a3412;padding:4px 10px;border-radius:20px;font-size:12px;}
         .badge-danger{background:#fee2e2;color:#991b1b;padding:4px 10px;border-radius:20px;font-size:12px;}
@@ -58,7 +61,7 @@
         .role-badge.admin{background:#dcfce7;color:#166534;padding:4px 12px;border-radius:20px;font-size:12px;}
         .progress-bar-big{height:10px;background:#e5e7eb;border-radius:10px;overflow:hidden;width:100%;}
         .progress-fill-big{height:100%;background:#10b981;transition:width 0.3s;}
-        .sync-status{position:fixed;bottom:20px;left:20px;background:white;padding:5px 12px;border-radius:20px;font-size:11px;z-index:100;cursor:pointer;}
+        .sync-status{position:fixed;bottom:20px;left:20px;background:white;padding:5px 12px;border-radius:20px;font-size:11px;z-index:100;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
         .stat-card{background:white;border-radius:16px;padding:20px;text-align:center;box-shadow:0 4px 6px rgba(0,0,0,0.1);transition:transform 0.2s;}
         .stat-card:hover{transform:translateY(-3px);}
         .stat-number{font-size:32px;font-weight:bold;}
@@ -103,6 +106,8 @@
             </div>
             <div class="flex items-center gap-3">
                 <span id="userRoleBadge" class="role-badge admin">Admin</span>
+                <button onclick="syncToCloud()" class="text-blue-500 hover:text-blue-700" title="Simpan ke Cloud"><i class="fas fa-cloud-upload-alt"></i></button>
+                <button onclick="loadFromCloud()" class="text-green-500 hover:text-green-700" title="Muat dari Cloud"><i class="fas fa-cloud-download-alt"></i></button>
                 <button onclick="toggleDarkMode()" class="text-gray-600"><i class="fas fa-moon"></i></button>
                 <button onclick="doLogout()" class="text-gray-500 hover:text-red-500"><i class="fas fa-sign-out-alt"></i></button>
             </div>
@@ -208,7 +213,7 @@
                         <div id="logoPreview" class="mt-3 p-4 bg-gray-50 rounded-lg text-center"><p class="text-gray-400">Preview logo akan tampil disini</p></div>
                     </div>
                 </div>
-                <div class="mb-6"><h3 class="font-semibold mb-3"><i class="fas fa-cloud-upload-alt mr-2"></i> Google Sheets Cloud</h3><div class="flex gap-3 flex-wrap"><button onclick="syncToCloud()" class="btn-primary flex-1 py-2"><i class="fas fa-cloud-upload-alt"></i> Simpan ke Cloud</button><button onclick="loadFromCloud()" class="btn-outline flex-1 py-2"><i class="fas fa-cloud-download-alt"></i> Load dari Cloud</button></div></div>
+                <div class="mb-6"><h3 class="font-semibold mb-3"><i class="fas fa-cloud-upload-alt mr-2"></i> Google Sheets Cloud</h3><div class="flex gap-3 flex-wrap"><button onclick="syncToCloud()" class="btn-sync flex-1 py-2"><i class="fas fa-cloud-upload-alt"></i> Simpan ke Cloud</button><button onclick="loadFromCloud()" class="btn-outline flex-1 py-2"><i class="fas fa-cloud-download-alt"></i> Load dari Cloud</button></div><p class="text-xs text-gray-400 mt-2">Data akan tersimpan ke Google Sheet dan bisa diakses dari HP manapun</p></div>
             </div></div>
         </div>
     </div>
@@ -227,14 +232,15 @@ let currentSantriId = null;
 let currentMapelSantriId = null;
 let chartInstances = {};
 
+// URL Web App Google Sheet (SUDAH DIPASANGKAN)
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbztnYvcROW0wQP0TTBM-YjGp7dSphAWWM2r_D8iPVVPmNhKu9hdbS849m4WyvrMPxvM/exec';
+
 let profil = {
     namaPesantren: 'Pondok Pesantren Bahrul Maghfiroh',
     pengasuh: 'KH. Ahmad Munif',
     ketuaPondok: 'Drs. M. Sholeh',
     logoUrl: ''
 };
-
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxP4v4RXW85cz53ZMk-uRsZqsQdl98NW23v6vzfBow6x8cSMtu12bZHBrCHRfR1JenW/exec';
 
 const daftarJuz = ['An-Naba','An-Nazi\'at','Abasa','At-Takwir','Al-Infitar','Al-Mutaffifin','Al-Insyiqaq','Al-Buruj','At-Tariq','Al-A\'la','Al-Ghasyiyah','Al-Fajr','Al-Balad','Asy-Syams','Al-Lail','Ad-Duha','Asy-Syarh','At-Tin','Al-Alaq','Al-Qadr','Al-Bayyinah','Az-Zalzalah','Al-Adiyat','Al-Qari\'ah','At-Takasur','Al-Asr','Al-Humazah','Al-Fil','Quraisy','Al-Ma\'un','Al-Kausar','Al-Kafirun','An-Nasr','Al-Lahab','Al-Ikhlas','Al-Falaq','An-Nas'];
 
@@ -286,30 +292,50 @@ function getNewSantri() {
     };
 }
 
-// ==================== CLOUD & STORAGE ====================
+// ==================== CLOUD SYNC KE GOOGLE SHEET ====================
 function updateCloudStatus(status, text) {
     let el = document.getElementById('syncStatus');
-    if(el) { el.className = `sync-status ${status} no-print`; el.innerHTML = `<i class="fas fa-cloud"></i> ${text}`; }
+    if(el) { 
+        let icon = status === 'online' ? '✅' : (status === 'syncing' ? '⏳' : '❌');
+        el.className = `sync-status ${status} no-print`;
+        el.innerHTML = `<i class="fas fa-cloud"></i> ${icon} ${text}`;
+        setTimeout(() => {
+            if(document.getElementById('syncStatus').className.includes('syncing')) {
+                document.getElementById('syncStatus').className = 'sync-status online no-print';
+                document.getElementById('syncStatus').innerHTML = `<i class="fas fa-cloud"></i> ✅ Cloud siap`;
+            }
+        }, 3000);
+    }
 }
 
 async function syncToCloud() {
-    updateCloudStatus('syncing', 'Menyimpan...');
+    if(!santri.length) {
+        showToast('Tidak ada data untuk disimpan', 'warning');
+        return;
+    }
+    updateCloudStatus('syncing', 'Menyimpan ke cloud...');
     try {
         const response = await fetch(`${APPS_SCRIPT_URL}?action=save&data=${encodeURIComponent(JSON.stringify(santri))}`, {method:'GET',mode:'cors'});
         const result = await response.json();
-        if(result.status === 'success') { updateCloudStatus('online', '✅ Tersimpan'); showToast('✅ Data berhasil disimpan ke cloud!', 'success'); }
+        if(result.status === 'success') { 
+            updateCloudStatus('online', '✅ Tersimpan ke Google Sheet');
+            showToast('✅ Data berhasil disimpan ke cloud! Bisa diakses dari HP lain', 'success');
+        }
         else throw new Error(result.message);
-    } catch(e) { updateCloudStatus('offline', '❌ Gagal'); showToast('❌ Gagal sync: ' + e.message, 'error'); }
+    } catch(e) { 
+        updateCloudStatus('offline', '❌ Gagal sync'); 
+        showToast('❌ Gagal sync: ' + e.message + '. Periksa koneksi internet', 'error'); 
+    }
 }
 
 async function loadFromCloud() {
-    updateCloudStatus('syncing', 'Memuat...');
+    updateCloudStatus('syncing', 'Memuat dari cloud...');
     try {
         const response = await fetch(`${APPS_SCRIPT_URL}?action=load&t=${Date.now()}`, {method:'GET',mode:'cors'});
         const result = await response.json();
         if(result.status === 'success' && result.data && result.data !== '[]') {
             const loadedData = JSON.parse(result.data);
-            if(Array.isArray(loadedData)) {
+            if(Array.isArray(loadedData) && loadedData.length) {
                 santri = loadedData;
                 for(let s of santri) {
                     if(!s.mapelStatus) s.mapelStatus = {};
@@ -319,11 +345,16 @@ async function loadFromCloud() {
                 }
                 localStorage.setItem('mutqin_santri', JSON.stringify(santri));
                 refreshAll();
-                updateCloudStatus('online', '✅ Dimuat');
+                updateCloudStatus('online', '✅ Dimuat dari cloud');
                 showToast('✅ Data berhasil dimuat dari cloud!', 'success');
+            } else {
+                showToast('Cloud kosong. Simpan data dulu.', 'warning');
             }
         } else showToast('Cloud kosong. Simpan data dulu.', 'warning');
-    } catch(e) { updateCloudStatus('offline', '❌ Gagal'); showToast('❌ Gagal load: ' + e.message, 'error'); }
+    } catch(e) { 
+        updateCloudStatus('offline', '❌ Gagal load'); 
+        showToast('❌ Gagal load: ' + e.message, 'error'); 
+    }
 }
 
 function loadData() {
@@ -332,8 +363,8 @@ function loadData() {
     if(!santri.length) {
         let juzFull = Array(37).fill(true);
         santri = [
-            { id: 1, nama: 'Ahmad Maulana', kelas: '3A', yasin: true, waqiah: true, mulk: true, wirid: true, doaShalat: true, tahlilRingkas: true, tahlilLengkap: true, doaTahlil: true, tawasul: true, juz30: [...juzFull], praktikShalat: true, praktikJenazah: true, praktikKhotib: true, madinUla: false, madinWustho: false, sikapJamaah: true, sikapMadin: true, sikapFormal: true, mapelStatus: {}, tanggalUpdate: new Date().toISOString() },
-            { id: 2, nama: 'Fatimah Azzahra', kelas: '5A', yasin: true, waqiah: true, mulk: true, wirid: true, doaShalat: true, tahlilRingkas: true, tahlilLengkap: true, doaTahlil: true, tawasul: true, juz30: [...juzFull], praktikShalat: true, praktikJenazah: true, praktikKhotib: true, madinUla: false, madinWustho: false, sikapJamaah: true, sikapMadin: true, sikapFormal: true, mapelStatus: {}, tanggalUpdate: new Date().toISOString() }
+            { id: 1, nama: 'Ahmad Maulana', kelas: '3A', yasin: true, waqiah: true, mulk: true, wirid: true, doaShalat: true, tahlilRingkas: true, tahlilLengkap: true, doaTahlil: true, tawasul: true, juz30: [...juzFull], praktikShalat: true, praktikJenazah: true, praktikKhotib: true, madinUla: false, madinWustho: false, sikapJamaah: true, sikapMadin: true, sikapFormal: true, mapelStatus: {}, nilaiSurat: 'Mumtaz', nilaiAurad: 'Mumtaz', nilaiJuz: 'Mumtaz', nilaiPraktik: 'Mumtaz', tanggalUpdate: new Date().toISOString() },
+            { id: 2, nama: 'Fatimah Azzahra', kelas: '5A', yasin: true, waqiah: true, mulk: true, wirid: true, doaShalat: true, tahlilRingkas: true, tahlilLengkap: true, doaTahlil: true, tawasul: true, juz30: [...juzFull], praktikShalat: true, praktikJenazah: true, praktikKhotib: true, madinUla: false, madinWustho: false, sikapJamaah: true, sikapMadin: true, sikapFormal: true, mapelStatus: {}, nilaiSurat: 'Mumtaz', nilaiAurad: 'Mumtaz', nilaiJuz: 'Mumtaz', nilaiPraktik: 'Mumtaz', tanggalUpdate: new Date().toISOString() }
         ];
     }
     for(let s of santri) {
@@ -341,11 +372,19 @@ function loadData() {
         if(!s.juz30) s.juz30 = Array(37).fill(false);
         if(s.madinUla === undefined) s.madinUla = false;
         if(s.madinWustho === undefined) s.madinWustho = false;
+        if(!s.nilaiSurat) s.nilaiSurat = 'Mumtaz';
+        if(!s.nilaiAurad) s.nilaiAurad = 'Mumtaz';
+        if(!s.nilaiJuz) s.nilaiJuz = 'Mumtaz';
+        if(!s.nilaiPraktik) s.nilaiPraktik = 'Mumtaz';
     }
     refreshAll();
 }
 
-function saveData() { localStorage.setItem('mutqin_santri', JSON.stringify(santri)); refreshAll(); showToast('Data tersimpan', 'success'); }
+function saveData() { 
+    localStorage.setItem('mutqin_santri', JSON.stringify(santri)); 
+    refreshAll(); 
+    showToast('Data tersimpan di lokal', 'success'); 
+}
 function showToast(msg, type) { let t = document.createElement('div'); t.className = `toast toast-${type}`; t.innerHTML = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 3000); }
 
 // ==================== PROFIL & LOGO ====================
@@ -762,11 +801,11 @@ function updateMenuByRole() {
     if(currentUserRole === 'admin'){
         badge.innerHTML = 'Admin';
         nav.innerHTML = `<div class="nav-item" onclick="showPage('dashboard')"><i class="fas fa-chart-line"></i> Dashboard</div><div class="nav-item" onclick="showPage('santri')"><i class="fas fa-users"></i> Data Santri</div><div class="nav-item" onclick="showPage('hafalan')"><i class="fas fa-book-open"></i> Hafalan & Madin</div><div class="nav-item" onclick="showPage('mapel')"><i class="fas fa-check-double"></i> Tam-taman</div><div class="nav-item" onclick="showPage('sertifikat')"><i class="fas fa-certificate"></i> Sertifikat</div><div class="nav-item" onclick="showPage('laporan')"><i class="fas fa-chart-bar"></i> Laporan</div><div class="nav-item" onclick="showPage('pengaturan')"><i class="fas fa-cog"></i> Pengaturan</div>`;
-        if(btns) btns.innerHTML = `<button onclick="openModal('tambahModal')" class="btn-primary"><i class="fas fa-plus"></i> Tambah</button><button onclick="openModal('massalModal')" class="btn-outline"><i class="fas fa-upload"></i> Import Massal</button><button onclick="exportToExcel()" class="btn-outline"><i class="fas fa-file-excel"></i> Export</button><button onclick="syncToCloud()" class="btn-outline"><i class="fas fa-cloud-upload-alt"></i> Sync Cloud</button><button onclick="loadFromCloud()" class="btn-outline"><i class="fas fa-cloud-download-alt"></i> Load Cloud</button>`;
+        if(btns) btns.innerHTML = `<button onclick="openModal('tambahModal')" class="btn-primary"><i class="fas fa-plus"></i> Tambah</button><button onclick="openModal('massalModal')" class="btn-outline"><i class="fas fa-upload"></i> Import Massal</button><button onclick="exportToExcel()" class="btn-outline"><i class="fas fa-file-excel"></i> Export</button><button onclick="syncToCloud()" class="btn-sync"><i class="fas fa-cloud-upload-alt"></i> Sync Cloud</button><button onclick="loadFromCloud()" class="btn-outline"><i class="fas fa-cloud-download-alt"></i> Load Cloud</button>`;
     } else {
         badge.innerHTML = 'Guru';
         nav.innerHTML = `<div class="nav-item" onclick="showPage('dashboard')"><i class="fas fa-chart-line"></i> Dashboard</div><div class="nav-item" onclick="showPage('santri')"><i class="fas fa-users"></i> Data Santri</div><div class="nav-item" onclick="showPage('hafalan')"><i class="fas fa-book-open"></i> Hafalan & Madin</div><div class="nav-item" onclick="showPage('mapel')"><i class="fas fa-check-double"></i> Tam-taman</div><div class="nav-item" onclick="showPage('sertifikat')"><i class="fas fa-certificate"></i> Sertifikat</div><div class="nav-item" onclick="showPage('laporan')"><i class="fas fa-chart-bar"></i> Laporan</div>`;
-        if(btns) btns.innerHTML = `<button onclick="exportToExcel()" class="btn-outline"><i class="fas fa-file-excel"></i> Export</button><button onclick="syncToCloud()" class="btn-outline"><i class="fas fa-cloud-upload-alt"></i> Sync Cloud</button><button onclick="loadFromCloud()" class="btn-outline"><i class="fas fa-cloud-download-alt"></i> Load Cloud</button>`;
+        if(btns) btns.innerHTML = `<button onclick="exportToExcel()" class="btn-outline"><i class="fas fa-file-excel"></i> Export</button><button onclick="syncToCloud()" class="btn-sync"><i class="fas fa-cloud-upload-alt"></i> Sync Cloud</button><button onclick="loadFromCloud()" class="btn-outline"><i class="fas fa-cloud-download-alt"></i> Load Cloud</button>`;
     }
 }
 
@@ -794,7 +833,7 @@ function updateLaporanContent(){
     });
     html += `</tbody></table>
     <h3 class="font-bold text-lg mt-4 mb-2">📚 Rangkuman Tam-taman (Validasi Mapel)</h3>
-    <table class="w-full text-sm border" style="width:100%;border-collapse:collapse;"><thead class="bg-purple-600 text-white"><tr><th class="p-2 border">No</th><th class="p-2 border">Nama</th><th class="p-2 border">Kelas</th><th class="p-2 border">Status Tam-taman</th><th class="p-2 border">Progress</th><tr></thead><tbody>`;
+    <table class="w-full text-sm border" style="width:100%;border-collapse:collapse;"><thead class="bg-purple-600 text-white"><tr><th class="p-2 border">No</th><th class="p-2 border">Nama</th><th class="p-2 border">Kelas</th><th class="p-2 border">Status Tam-taman</th><th class="p-2 border">Progress</th></tr></thead><tbody>`;
     santri.forEach((s,i)=>{ 
         let pMapel = hitungProgressMapel(s, s.kelas);
         html += `<tr class="border-b"><td class="p-2 border">${i+1}</td><td class="p-2 border">${s.nama}</td><td class="p-2 border">${s.kelas}</td><td class="p-2 border"><span class="badge-${getStatusMapel(s, s.kelas)==='Selesai'?'success':(getStatusMapel(s, s.kelas)==='Proses'?'warning':'danger')}">${getStatusMapel(s, s.kelas)}</span></td><td class="p-2 border">${pMapel.persen}% (${pMapel.done}/${pMapel.total})</span></td></tr>`;
