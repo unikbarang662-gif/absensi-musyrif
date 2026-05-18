@@ -49,7 +49,8 @@
         .progress-small{width:60px;height:4px;background:#e5e7eb;border-radius:10px;overflow:hidden;display:inline-block;margin-left:8px;}
         .progress-fill-small{height:100%;background:#10b981;}
         .mapel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;}
-        .mapel-item{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:white;border-radius:10px;border:1px solid #e5e7eb;}
+        .mapel-item{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:white;border-radius:10px;border:1px solid #e5e7eb;cursor:pointer;transition:0.2s;}
+        .mapel-item:hover{background:#e0e7ff;border-color:#10b981;}
         .dark-mode{background:#1a1a2e;color:#eee;}
         .dark-mode .bg-white{background:#16213e!important;color:#eee;}
         .dark-mode .btn-outline{background:#1a1a2e;border-color:#2c3e66;color:#eee;}
@@ -463,7 +464,7 @@ function renderHafalanList() {
     filtered.forEach(s=>{if(!groups[s.kelas]) groups[s.kelas]=[]; groups[s.kelas].push(s);});
     let html = '';
     for(let kelas of Object.keys(groups).sort()) {
-        html += `<div class="kelas-group"><div class="kelas-title" onclick="toggleKelas('kelas-${kelas}')">📚 Kelas ${kelas} (${groups[kelas].length}) <i class="fas fa-chevron-down float-right"></i></div><div id="kelas-${kelas}" class="kelas-content">`;
+        html += `<div class="kelas-group"><div class="kelas-title" onclick="toggleKelas('kelas-${kelas}')">📚 Kelas ${kelas} (${groups[kelas].length}) <i class="fas fa-chevron-down float-right"></i></div><div id="kelas-${kelas}" class="kelas-content" style="display:block;">`;
         groups[kelas].forEach(s => {
             let p = hitungProgressHafalan(s);
             html += `<div class="santri-item" onclick="selectHafalan(${s.id})"><div><span class="font-medium">${s.nama}</span><div class="progress-small"><div class="progress-fill-small" style="width:${p}%"></div></div></div><div>${p}% <i class="fas fa-chevron-right"></i></div></div>`;
@@ -480,14 +481,14 @@ function renderMapelList() {
     filtered.forEach(s=>{if(!groups[s.kelas]) groups[s.kelas]=[]; groups[s.kelas].push(s);});
     let html = '';
     for(let kelas of Object.keys(groups).sort()) {
-        html += `<div class="kelas-group"><div class="kelas-title" onclick="toggleKelas('mapel-${kelas}')">📚 Kelas ${kelas} (${groups[kelas].length}) <i class="fas fa-chevron-down float-right"></i></div><div id="mapel-${kelas}" class="kelas-content">`;
+        html += `<div class="kelas-group"><div class="kelas-title" onclick="toggleKelas('mapel-${kelas}')">📚 Kelas ${kelas} (${groups[kelas].length}) <i class="fas fa-chevron-down float-right"></i></div><div id="mapel-${kelas}" class="kelas-content" style="display:block;">`;
         groups[kelas].forEach(s => {
             let p = hitungProgressMapel(s, s.kelas).persen;
-            html += `<div class="santri-item" onclick="selectMapel(${s.id})"><div><span class="font-medium">${s.nama}</span><div class="progress-small"><div class="progress-fill-small" style="width:${p}%"></div></div></div><div>${p}%</div></div>`;
+            html += `<div class="santri-item" onclick="selectMapel(${s.id})"><div><span class="font-medium">${s.nama}</span><div class="progress-small"><div class="progress-fill-small" style="width:${p}%"></div></div></div><div>${p}% <i class="fas fa-chevron-right"></i></div></div>`;
         });
         html += `</div></div>`;
     }
-    document.getElementById('santriListMapel').innerHTML = html;
+    document.getElementById('santriListMapel').innerHTML = html || '<div class="p-4 text-center text-gray-400">Tidak ada santri</div>';
 }
 
 function toggleKelas(id) {
@@ -576,13 +577,27 @@ function loadFormMapel() {
     if(!s) return;
     let list = mapelByKelas[s.kelas] || [];
     let {done,total} = hitungProgressMapel(s,s.kelas);
-    let html = `<div class="bg-purple-50 p-4 rounded"><h3 class="font-bold">📚 Mapel Kelas ${s.kelas} - ${s.nama}</h3><div>Progress: ${done}/${total} (${Math.round((done/total)*100)}%)</div><div class="mapel-grid mt-3">`;
+    let html = `<div class="bg-purple-50 p-4 rounded"><h3 class="font-bold">📚 MAPEL KELAS ${s.kelas} - ${s.nama}</h3><div class="mb-3">Progress: ${done}/${total} (${Math.round((done/total)*100)}%)</div><div class="flex gap-3 mb-4"><button onclick="checkAllMapelSantri()" class="btn-outline"><i class="fas fa-check-double"></i> Centang Semua Mapel</button><button onclick="uncheckAllMapelSantri()" class="btn-outline"><i class="fas fa-times"></i> Hapus Semua Mapel</button></div><div class="mapel-grid">`;
     for(let m of list) {
-        html += `<div class="mapel-item"><span>${m}</span><input type="checkbox" id="mapel_${m.replace(/\s/g,'_')}" class="mapel-cb" ${s.mapelStatus[m]?'checked':''}></div>`;
+        html += `<div class="mapel-item" onclick="document.getElementById('mapel_${m.replace(/\s/g,'_')}').click()"><span>📖 ${m}</span><input type="checkbox" id="mapel_${m.replace(/\s/g,'_')}" class="mapel-cb" ${s.mapelStatus[m]?'checked':''} onchange="simpanMapelOtomatis()"></div>`;
     }
-    html += `</div><div class="flex gap-3 mt-4"><button onclick="checkAllMapelSantri()" class="btn-outline"><i class="fas fa-check-double"></i> Centang Semua</button><button onclick="uncheckAllMapelSantri()" class="btn-outline"><i class="fas fa-times"></i> Hapus Semua</button><button onclick="simpanMapel()" class="btn-primary">Simpan Mapel</button></div></div>`;
+    html += `</div><div class="mt-4 text-center text-gray-500 text-sm">✅ Klik pada kotak mapel untuk mencentang/membatalkan</div></div>`;
     document.getElementById('formMapel').classList.remove('hidden');
     document.getElementById('formMapel').innerHTML = html;
+}
+
+function simpanMapelOtomatis() {
+    let idx = santri.findIndex(x=>x.id===currentMapelSantriId);
+    if(idx===-1) return;
+    let s = santri[idx];
+    let list = mapelByKelas[s.kelas] || [];
+    for(let m of list) {
+        let cb = document.getElementById(`mapel_${m.replace(/\s/g,'_')}`);
+        if(cb) s.mapelStatus[m] = cb.checked;
+    }
+    saveData();
+    renderMapelList();
+    updateDashboard();
 }
 
 function checkAllMapelSantri() {
@@ -630,7 +645,21 @@ function simpanMadinDanRefresh(){
     showToast(`✅ Status diperbarui! Progress: ${hitungProgressHafalan(santri[idx])}%`, 'success');
 }
 
-function simpanMapel(){ let idx=santri.findIndex(x=>x.id===currentMapelSantriId); if(idx===-1)return; let s=santri[idx]; let list=mapelByKelas[s.kelas]||[]; for(let m of list){ let cb=document.getElementById(`mapel_${m.replace(/\s/g,'_')}`); if(cb) s.mapelStatus[m]=cb.checked;} saveData(); loadFormMapel(); renderMapelList(); updateDashboard(); showToast('Mapel tersimpan','success'); }
+function simpanMapel(){ 
+    let idx=santri.findIndex(x=>x.id===currentMapelSantriId); 
+    if(idx===-1)return; 
+    let s=santri[idx]; 
+    let list=mapelByKelas[s.kelas]||[]; 
+    for(let m of list){ 
+        let cb=document.getElementById(`mapel_${m.replace(/\s/g,'_')}`); 
+        if(cb) s.mapelStatus[m]=cb.checked;
+    } 
+    saveData(); 
+    loadFormMapel(); 
+    renderMapelList(); 
+    updateDashboard(); 
+    showToast('Mapel tersimpan','success'); 
+}
 
 function updateSelectSertifikat(){
     let select = document.getElementById('selectSertifikat');
@@ -645,7 +674,6 @@ function loadSertifikat(){
     let today = new Date().toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' });
     let logoHtml = (profil.logoUrl && profil.logoUrl.trim()) ? `<img src="${profil.logoUrl}" style="width:80px;height:80px;object-fit:cover;border-radius:50%;margin:0 auto 15px;">` : `<i class="fas fa-graduation-cap text-emerald-600 text-5xl mb-3"></i>`;
     
-    // Tentukan predikat berdasarkan nilai
     let predikat = '';
     let nilaiSurat = s.nilaiSurat || 'Mumtaz';
     if(nilaiSurat === 'Mumtaz') predikat = 'MUMTAZ';
@@ -766,7 +794,7 @@ function updateLaporanContent(){
     <h3 class="font-bold text-lg mt-4 mb-2">📊 Rangkuman Hafalan</h3>
     <table class="w-full text-sm border mb-6" style="width:100%;border-collapse:collapse;"><thead class="bg-emerald-600 text-white"><tr><th class="p-2 border">No</th><th class="p-2 border">Nama</th><th class="p-2 border">Kelas</th><th class="p-2 border">Status Hafalan</th><th class="p-2 border">Progress</th><th class="p-2 border">Madin Ula</th><th class="p-2 border">Madin Wustho</th></tr></thead><tbody>`;
     santri.forEach((s,i)=>{ 
-        html += `<tr class="border-b"><td class="p-2 border">${i+1}<td><td class="p-2 border">${s.nama}</td><td class="p-2 border">${s.kelas}</td><td class="p-2 border"><span class="badge-${getStatusHafalan(s)==='Lulus'?'success':(getStatusHafalan(s)==='Proses'?'warning':'danger')}">${getStatusHafalan(s)}</span></td><td class="p-2 border">${hitungProgressHafalan(s)}%</span></td><td class="p-2 border">${s.madinUla?'✅':'❌'}</td><td class="p-2 border">${s.madinWustho?'✅':'❌'}</td></tr>`;
+        html += `<tr class="border-b"><td class="p-2 border">${i+1}</td><td class="p-2 border">${s.nama}</td><td class="p-2 border">${s.kelas}</td><td class="p-2 border"><span class="badge-${getStatusHafalan(s)==='Lulus'?'success':(getStatusHafalan(s)==='Proses'?'warning':'danger')}">${getStatusHafalan(s)}</span></td><td class="p-2 border">${hitungProgressHafalan(s)}%</span></td><td class="p-2 border">${s.madinUla?'✅':'❌'}</td><td class="p-2 border">${s.madinWustho?'✅':'❌'}</td></tr>`;
     });
     html += `</tbody></table>
     <h3 class="font-bold text-lg mt-4 mb-2">📚 Rangkuman Tam-taman (Validasi Mapel)</h3>
