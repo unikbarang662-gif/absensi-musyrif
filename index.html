@@ -194,7 +194,7 @@
             </div>
             <div id="pageSantri" class="page hidden"><h2 class="text-xl font-bold mb-4">Data Santri</h2><div class="flex gap-2 mb-4 flex-wrap" id="santriButtons"></div><input type="text" id="searchSantri" placeholder="Cari nama atau kelas..." class="w-full p-2 border rounded-lg mb-4" onkeyup="renderSantri()"><div id="santriListContainer" class="bg-white rounded-xl shadow"></div></div>
             <div id="pageHafalan" class="page hidden"><h2 class="text-xl font-bold mb-4">Hafalan & Pendidikan Madin</h2><div class="bg-white rounded-xl shadow"><div class="p-4 border-b flex justify-between items-center flex-wrap gap-2"><input type="text" id="searchSantriHafalan" placeholder="Cari santri..." class="flex-1 p-2 border rounded-lg" onkeyup="filterHafalanList()"><button onclick="checkAllHafalan()" class="btn-outline text-sm"><i class="fas fa-check-double"></i> Centang Semua</button><button onclick="uncheckAllHafalan()" class="btn-outline text-sm"><i class="fas fa-times"></i> Hapus Semua</button></div><div id="santriListHafalan" class="santri-list-group"></div><div id="formHafalan" class="hidden p-4"></div></div></div>
-            <div id="pageMapel" class="page hidden"><h2 class="text-xl font-bold mb-4">Tam-taman (Penilaian Mapel)</h2><div class="bg-white rounded-xl shadow"><div class="p-4 border-b flex justify-between items-center flex-wrap gap-2"><input type="text" id="searchSantriMapel" placeholder="Cari santri..." class="flex-1 p-2 border rounded-lg" onkeyup="filterMapelList()"><button onclick="checkAllMapel()" class="btn-outline text-sm"><i class="fas fa-check-double"></i> Centang Semua</button><button onclick="uncheckAllMapel()" class="btn-outline text-sm"><i class="fas fa-times"></i> Hapus Semua</button></div><div id="santriListMapel" class="santri-list-group"></div><div id="formMapel" class="hidden p-4"></div></div></div>
+            <div id="pageMapel" class="page hidden"><h2 class="text-xl font-bold mb-4">Tam-taman (Penilaian Mapel)</h2><div class="bg-white rounded-xl shadow"><div class="p-4 border-b flex justify-between items-center flex-wrap gap-2"><input type="text" id="searchSantriMapel" placeholder="Cari santri..." class="flex-1 p-2 border rounded-lg" onkeyup="filterMapelList()"><button onclick="checkAllMapel()" class="btn-outline text-sm"><i class="fas fa-check-double"></i> Centang Semua Mapel</button><button onclick="uncheckAllMapel()" class="btn-outline text-sm"><i class="fas fa-times"></i> Hapus Semua Mapel</button></div><div id="santriListMapel" class="santri-list-group"></div><div id="formMapel" class="hidden p-4"></div></div></div>
             <div id="pageSertifikat" class="page hidden"><h2 class="text-xl font-bold mb-4">Sertifikat Kelulusan Hafalan</h2><div class="bg-white rounded-xl shadow p-4"><select id="selectSertifikat" class="w-full p-2 border rounded-lg mb-4" onchange="loadSertifikat()"><option value="">-- Pilih Santri Lulus Hafalan --</option></select><div id="sertifikatPreview"></div></div></div>
             <div id="pageLaporan" class="page hidden"><h2 class="text-xl font-bold mb-4">Laporan Lengkap</h2><div class="bg-white rounded-xl shadow p-6" id="laporanContent"></div><div class="mt-4 flex gap-3"><button onclick="exportLaporanPDF()" class="btn-primary"><i class="fas fa-file-pdf"></i> Download PDF</button><button onclick="exportToExcel()" class="btn-outline"><i class="fas fa-file-excel"></i> Download Excel</button></div></div>
             <div id="pagePengaturan" class="page hidden"><h2 class="text-xl font-bold mb-4">Pengaturan Profil Pesantren</h2><div class="bg-white rounded-xl shadow p-6 max-w-2xl">
@@ -531,7 +531,7 @@ function checkAllMapel() {
         let list = mapelByKelas[s.kelas] || [];
         list.forEach(m => { s.mapelStatus[m] = true; });
     });
-    saveData(); renderMapelList(); updateDashboard(); showToast('Semua mapel dicentang', 'success');
+    saveData(); renderMapelList(); updateDashboard(); showToast('Semua mapel dicentang untuk semua santri', 'success');
 }
 
 function uncheckAllMapel() {
@@ -539,7 +539,7 @@ function uncheckAllMapel() {
         let list = mapelByKelas[s.kelas] || [];
         list.forEach(m => { s.mapelStatus[m] = false; });
     });
-    saveData(); renderMapelList(); updateDashboard(); showToast('Semua mapel dihapus', 'success');
+    saveData(); renderMapelList(); updateDashboard(); showToast('Semua mapel dihapus untuk semua santri', 'success');
 }
 
 function loadFormHafalan() {
@@ -577,27 +577,23 @@ function loadFormMapel() {
     if(!s) return;
     let list = mapelByKelas[s.kelas] || [];
     let {done,total} = hitungProgressMapel(s,s.kelas);
-    let html = `<div class="bg-purple-50 p-4 rounded"><h3 class="font-bold">📚 MAPEL KELAS ${s.kelas} - ${s.nama}</h3><div class="mb-3">Progress: ${done}/${total} (${Math.round((done/total)*100)}%)</div><div class="flex gap-3 mb-4"><button onclick="checkAllMapelSantri()" class="btn-outline"><i class="fas fa-check-double"></i> Centang Semua Mapel</button><button onclick="uncheckAllMapelSantri()" class="btn-outline"><i class="fas fa-times"></i> Hapus Semua Mapel</button></div><div class="mapel-grid">`;
+    let html = `<div class="bg-purple-50 p-4 rounded"><h3 class="font-bold text-lg">📚 MAPEL KELAS ${s.kelas} - ${s.nama}</h3>
+        <div class="mb-3">Progress: ${done}/${total} (${Math.round((done/total)*100)}%)</div>
+        <div class="flex gap-3 mb-4 flex-wrap">
+            <button onclick="checkAllMapelSantri()" class="btn-outline"><i class="fas fa-check-double"></i> Centang Semua Mapel</button>
+            <button onclick="uncheckAllMapelSantri()" class="btn-outline"><i class="fas fa-times"></i> Hapus Semua Mapel</button>
+            <button onclick="simpanMapel()" class="btn-primary"><i class="fas fa-save"></i> Simpan Mapel</button>
+        </div>
+        <div class="mapel-grid">`;
     for(let m of list) {
-        html += `<div class="mapel-item" onclick="document.getElementById('mapel_${m.replace(/\s/g,'_')}').click()"><span>📖 ${m}</span><input type="checkbox" id="mapel_${m.replace(/\s/g,'_')}" class="mapel-cb" ${s.mapelStatus[m]?'checked':''} onchange="simpanMapelOtomatis()"></div>`;
+        html += `<div class="mapel-item" onclick="document.getElementById('mapel_${m.replace(/\s/g,'_')}').click()">
+            <span>📖 ${m}</span>
+            <input type="checkbox" id="mapel_${m.replace(/\s/g,'_')}" class="mapel-cb" ${s.mapelStatus[m]?'checked':''}>
+        </div>`;
     }
-    html += `</div><div class="mt-4 text-center text-gray-500 text-sm">✅ Klik pada kotak mapel untuk mencentang/membatalkan</div></div>`;
+    html += `</div><div class="mt-4 text-center text-gray-500 text-sm">✅ Klik pada kotak mapel untuk mencentang/membatalkan, lalu klik Simpan Mapel</div></div>`;
     document.getElementById('formMapel').classList.remove('hidden');
     document.getElementById('formMapel').innerHTML = html;
-}
-
-function simpanMapelOtomatis() {
-    let idx = santri.findIndex(x=>x.id===currentMapelSantriId);
-    if(idx===-1) return;
-    let s = santri[idx];
-    let list = mapelByKelas[s.kelas] || [];
-    for(let m of list) {
-        let cb = document.getElementById(`mapel_${m.replace(/\s/g,'_')}`);
-        if(cb) s.mapelStatus[m] = cb.checked;
-    }
-    saveData();
-    renderMapelList();
-    updateDashboard();
 }
 
 function checkAllMapelSantri() {
@@ -606,7 +602,7 @@ function checkAllMapelSantri() {
         let list = mapelByKelas[s.kelas] || [];
         list.forEach(m => { s.mapelStatus[m] = true; });
         saveData(); loadFormMapel(); renderMapelList(); updateDashboard();
-        showToast('Semua mapel dicentang', 'success');
+        showToast('Semua mapel dicentang untuk santri ini', 'success');
     }
 }
 function uncheckAllMapelSantri() {
@@ -615,7 +611,7 @@ function uncheckAllMapelSantri() {
         let list = mapelByKelas[s.kelas] || [];
         list.forEach(m => { s.mapelStatus[m] = false; });
         saveData(); loadFormMapel(); renderMapelList(); updateDashboard();
-        showToast('Semua mapel dihapus', 'success');
+        showToast('Semua mapel dihapus untuk santri ini', 'success');
     }
 }
 
@@ -686,7 +682,7 @@ function loadSertifikat(){
             ${logoHtml}
             <h2>${profil.namaPesantren.toUpperCase()}</h2>
             <div class="border-b-2 w-24 mx-auto my-3"></div>
-            <h3 style="font-size:18px; margin-top:10px;">SERTIFIKAT KELULUSAN HAFALAN</h3>
+            <h3 style="font-size:18px; margin-top:10px;">SERTIFIKAT STANDAR KELULUSAN PONDOK</h3>
             <div class="arabic" style="margin:20px 0;">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>
             <p style="font-size:14px; line-height:1.6;">Dengan memohon rahmat dan ridha Allah Subḥānahu wa Ta‘ālā,<br>Ponpes Bahrul Maghfiroh menyatakan bahwa Ananda:</p>
             <h3 style="font-size:28px; font-weight:bold; margin:20px 0; color:#065f46;">${s.nama}</h3>
@@ -798,7 +794,7 @@ function updateLaporanContent(){
     });
     html += `</tbody></table>
     <h3 class="font-bold text-lg mt-4 mb-2">📚 Rangkuman Tam-taman (Validasi Mapel)</h3>
-    <table class="w-full text-sm border" style="width:100%;border-collapse:collapse;"><thead class="bg-purple-600 text-white"><tr><th class="p-2 border">No</th><th class="p-2 border">Nama</th><th class="p-2 border">Kelas</th><th class="p-2 border">Status Tam-taman</th><th class="p-2 border">Progress</th></tr></thead><tbody>`;
+    <table class="w-full text-sm border" style="width:100%;border-collapse:collapse;"><thead class="bg-purple-600 text-white"><tr><th class="p-2 border">No</th><th class="p-2 border">Nama</th><th class="p-2 border">Kelas</th><th class="p-2 border">Status Tam-taman</th><th class="p-2 border">Progress</th><tr></thead><tbody>`;
     santri.forEach((s,i)=>{ 
         let pMapel = hitungProgressMapel(s, s.kelas);
         html += `<tr class="border-b"><td class="p-2 border">${i+1}</td><td class="p-2 border">${s.nama}</td><td class="p-2 border">${s.kelas}</td><td class="p-2 border"><span class="badge-${getStatusMapel(s, s.kelas)==='Selesai'?'success':(getStatusMapel(s, s.kelas)==='Proses'?'warning':'danger')}">${getStatusMapel(s, s.kelas)}</span></td><td class="p-2 border">${pMapel.persen}% (${pMapel.done}/${pMapel.total})</span></td></tr>`;
