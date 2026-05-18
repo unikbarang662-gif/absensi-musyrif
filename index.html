@@ -36,7 +36,15 @@
         .kelas-title{background:#f0fdf4;padding:12px 16px;font-weight:700;color:#065f46;border-bottom:1px solid #d1fae5;cursor:pointer;}
         .santri-item{padding:12px 16px;padding-left:35px;border-bottom:1px solid #f3f4f6;cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
         .santri-item:hover{background:#d1fae5;}
-        .certificate-box{background:white;border:8px double #c6a43b;border-radius:16px;padding:40px;max-width:600px;margin:0 auto;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.1);}
+        .certificate-box{background:white;border:8px double #c6a43b;border-radius:16px;padding:40px;max-width:700px;margin:0 auto;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.1);font-family:'Times New Roman',serif;}
+        .certificate-box h2{font-size:24px;font-weight:bold;margin-bottom:10px;}
+        .certificate-box .arabic{font-size:14px;font-style:italic;margin:10px 0;}
+        .certificate-box .predikat{font-size:28px;font-weight:bold;color:#c6a43b;margin:15px 0;letter-spacing:2px;}
+        .certificate-box .signature{display:flex;justify-content:space-between;margin-top:30px;padding-top:20px;}
+        .certificate-box .signature-left{text-align:center;flex:1;}
+        .certificate-box .signature-right{text-align:center;flex:1;}
+        .certificate-box .signature-line{width:200px;border-top:1px solid #000;margin:10px auto;}
+        .certificate-box .footer-text{font-size:12px;font-style:italic;margin-top:20px;color:#555;text-align:center;}
         .datetime-card{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:16px;padding:12px 16px;color:white;margin-bottom:16px;}
         .progress-small{width:60px;height:4px;background:#e5e7eb;border-radius:10px;overflow:hidden;display:inline-block;margin-left:8px;}
         .progress-fill-small{height:100%;background:#10b981;}
@@ -636,7 +644,46 @@ function loadSertifikat(){
     if(!s) return;
     let today = new Date().toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' });
     let logoHtml = (profil.logoUrl && profil.logoUrl.trim()) ? `<img src="${profil.logoUrl}" style="width:80px;height:80px;object-fit:cover;border-radius:50%;margin:0 auto 15px;">` : `<i class="fas fa-graduation-cap text-emerald-600 text-5xl mb-3"></i>`;
-    document.getElementById('sertifikatPreview').innerHTML = `<div class="text-center"><div id="sertifikatBox" class="certificate-box">${logoHtml}<h2 class="text-2xl font-bold">${profil.namaPesantren}</h2><div class="border-b-2 w-24 mx-auto my-3"></div><p class="text-lg font-semibold">SERTIFIKAT KELULUSAN HAFALAN</p><h3 class="text-3xl font-bold text-emerald-700 my-3">${s.nama}</h3><p class="text-gray-600">Telah dinyatakan <strong>LULUS</strong> dalam program hafalan</p><div class="bg-emerald-100 px-6 py-2 rounded-full inline-block my-4"><span class="font-bold text-emerald-800">LULUS HAFALAN</span></div><div class="mt-4 pt-3 border-t text-center text-sm"><p class="text-gray-600">Pengasuh: ${profil.pengasuh}</p><p class="text-gray-600">Ketua: ${profil.ketuaPondok}</p><p class="text-gray-500 mt-2">Malang, ${today}</p></div></div><button onclick="downloadSertifikat()" class="btn-primary mt-4"><i class="fas fa-download"></i> Download Sertifikat PNG</button></div>`;
+    
+    // Tentukan predikat berdasarkan nilai
+    let predikat = '';
+    let nilaiSurat = s.nilaiSurat || 'Mumtaz';
+    if(nilaiSurat === 'Mumtaz') predikat = 'MUMTAZ';
+    else if(nilaiSurat === 'Jayyid Jiddan') predikat = 'JAYYID JIDDAN';
+    else predikat = 'JAYYID';
+    
+    document.getElementById('sertifikatPreview').innerHTML = `
+    <div class="text-center">
+        <div id="sertifikatBox" class="certificate-box">
+            ${logoHtml}
+            <h2>${profil.namaPesantren.toUpperCase()}</h2>
+            <div class="border-b-2 w-24 mx-auto my-3"></div>
+            <h3 style="font-size:18px; margin-top:10px;">SERTIFIKAT KELULUSAN HAFALAN</h3>
+            <div class="arabic" style="margin:20px 0;">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيم</div>
+            <p style="font-size:14px; line-height:1.6;">Dengan memohon rahmat dan ridha Allah Subḥānahu wa Ta‘ālā,<br>Ponpes Bahrul Maghfiroh menyatakan bahwa Ananda:</p>
+            <h3 style="font-size:28px; font-weight:bold; margin:20px 0; color:#065f46;">${s.nama}</h3>
+            <p style="font-size:14px; line-height:1.6;">Telah <strong>MENYELESAIKAN</strong> dan <strong>LULUS</strong> dalam Program Hafalan Standar Kelulusan<br>Pondok Bahrul Maghfiroh dengan predikat:</p>
+            <div class="predikat">${predikat}</div>
+            <p style="font-size:12px; line-height:1.5; margin-top:15px; font-style:italic;">Sertifikat ini diberikan sebagai bentuk apresiasi atas kesungguhan, kedisiplinan,<br>dan istiqamah dalam mengikuti program hafalan di Pondok Pesantren Bahrul Maghfiroh.</p>
+            <div class="signature">
+                <div class="signature-left">
+                    <div class="signature-line"></div>
+                    <p><strong>${profil.pengasuh}</strong></p>
+                    <p style="font-size:11px;">Pengasuh Pondok Pesantren</p>
+                </div>
+                <div class="signature-right">
+                    <div class="signature-line"></div>
+                    <p><strong>${profil.ketuaPondok}</strong></p>
+                    <p style="font-size:11px;">Ketua Pondok Pesantren</p>
+                </div>
+            </div>
+            <div class="footer-text">
+                <p>Semoga ilmu dan hafalan yang diperoleh menjadi amal yang bermanfaat, berkah,<br>serta mendapatkan ridha Allah Subḥānahu wa Ta‘ālā.</p>
+                <p style="margin-top:10px;">Malang, ${today}</p>
+            </div>
+        </div>
+        <button onclick="downloadSertifikat()" class="btn-primary mt-4"><i class="fas fa-download"></i> Download Sertifikat PNG</button>
+    </div>`;
 }
 function downloadSertifikat(){ let node=document.getElementById('sertifikatBox'); html2canvas(node,{scale:2}).then(c=>{let a=document.createElement('a');a.download='sertifikat.png';a.href=c.toDataURL();a.click();showToast('Sertifikat terunduh','success');}); }
 
@@ -719,7 +766,7 @@ function updateLaporanContent(){
     <h3 class="font-bold text-lg mt-4 mb-2">📊 Rangkuman Hafalan</h3>
     <table class="w-full text-sm border mb-6" style="width:100%;border-collapse:collapse;"><thead class="bg-emerald-600 text-white"><tr><th class="p-2 border">No</th><th class="p-2 border">Nama</th><th class="p-2 border">Kelas</th><th class="p-2 border">Status Hafalan</th><th class="p-2 border">Progress</th><th class="p-2 border">Madin Ula</th><th class="p-2 border">Madin Wustho</th></tr></thead><tbody>`;
     santri.forEach((s,i)=>{ 
-        html += `<tr class="border-b"><td class="p-2 border">${i+1}</td><td class="p-2 border">${s.nama}</td><td class="p-2 border">${s.kelas}</td><td class="p-2 border"><span class="badge-${getStatusHafalan(s)==='Lulus'?'success':(getStatusHafalan(s)==='Proses'?'warning':'danger')}">${getStatusHafalan(s)}</span></td><td class="p-2 border">${hitungProgressHafalan(s)}%</td><td class="p-2 border">${s.madinUla?'✅':'❌'}</td><td class="p-2 border">${s.madinWustho?'✅':'❌'}</td></tr>`;
+        html += `<tr class="border-b"><td class="p-2 border">${i+1}<td><td class="p-2 border">${s.nama}</td><td class="p-2 border">${s.kelas}</td><td class="p-2 border"><span class="badge-${getStatusHafalan(s)==='Lulus'?'success':(getStatusHafalan(s)==='Proses'?'warning':'danger')}">${getStatusHafalan(s)}</span></td><td class="p-2 border">${hitungProgressHafalan(s)}%</span></td><td class="p-2 border">${s.madinUla?'✅':'❌'}</td><td class="p-2 border">${s.madinWustho?'✅':'❌'}</td></tr>`;
     });
     html += `</tbody></table>
     <h3 class="font-bold text-lg mt-4 mb-2">📚 Rangkuman Tam-taman (Validasi Mapel)</h3>
